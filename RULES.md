@@ -3,8 +3,16 @@ A Mora Jai grid is 3x3. each tile is one of the colors listed below along with i
 Tile Colors and Behaviors
 - Orange: If there is a majority color around it, pressing the tile will change color to the majority color. 
 - Yellow: Swaps with piece above it. If it is at the top, does nothing.
+- Purple: Swaps with piece below it. If it is at the bottom, does nothing.
 - Blue: Copies the action of the item in the center of the board.
 - Black: Shifts row to the right. Loops over.
+- Pink: Rotates all neighbors clockwise.
 - Gray: Does nothing.
 
 Create an HTML/JS application that will allow user to input the starting tiles + colors as well as the corner colors. And once that is done, provide a set of moves that must be taken in sequence in order to solve the puzzle.
+
+When user opens it up, also show a default grid like the following:
+- (All corners are orange.)
+- GRAY ORANGE ORANGE
+- YELLOW ORANGE BLACK
+- BLUE BLUE ORANGE

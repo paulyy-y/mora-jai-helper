@@ -10,6 +10,12 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .grid-container {
+            position: relative;
+            width: 310px;
+            margin: 20px auto;
         }
         .grid {
             display: grid;
@@ -28,27 +34,138 @@
             font-weight: bold;
             color: white;
             text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+        }
+        .tile:hover {
+            transform: scale(1.05);
+        }
+        .corner-color {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #333;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .corner-color:hover {
+            transform: scale(1.1);
+        }
+        .corner-tl {
+            position: absolute;
+            top: -50px;
+            left: -50px;
+        }
+        .corner-tr {
+            position: absolute;
+            top: -50px;
+            right: -50px;
+        }
+        .corner-bl {
+            position: absolute;
+            bottom: -50px;
+            left: -50px;
+        }
+        .corner-br {
+            position: absolute;
+            bottom: -50px;
+            right: -50px;
         }
         .controls {
             margin: 20px 0;
-        }
-        .corner-colors {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin: 20px 0;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
         }
         .solution {
             margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .solution h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .solution-steps {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .solution-step {
             padding: 10px;
-            background-color: #f0f0f0;
-            border-radius: 5px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .solution-step:hover {
+            background-color: #e9ecef;
+        }
+        .step-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 20px);
+            gap: 2px;
+            margin-left: 10px;
+        }
+        .step-tile {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #333;
+            background-color: #ddd;
+        }
+        .step-tile.target {
+            background-color: #007bff;
+            border: 2px solid #0056b3;
+        }
+        .step-number {
+            font-weight: bold;
+            color: #007bff;
+            min-width: 25px;
+        }
+        .step-text {
+            flex-grow: 1;
         }
         .orange { background-color: #FFA500; }
         .yellow { background-color: #FFD700; }
         .blue { background-color: #0000FF; }
         .black { background-color: #000000; }
         .gray { background-color: #808080; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #444;
+            margin-bottom: 15px;
+        }
+        .corner-label {
+            position: absolute;
+            font-size: 12px;
+            color: #666;
+        }
+        .corner-label-tl { top: -70px; left: -50px; }
+        .corner-label-tr { top: -70px; right: -50px; }
+        .corner-label-bl { bottom: -70px; left: -50px; }
+        .corner-label-br { bottom: -70px; right: -50px; }
     </style>
 </head>
 <body>
@@ -56,60 +173,27 @@
     
     <div class="controls">
         <h2>Set Initial Grid</h2>
-        <div class="grid" id="grid"></div>
+        <div class="grid-container">
+            <div class="corner-label corner-label-tl">Top Left</div>
+            <div class="corner-label corner-label-tr">Top Right</div>
+            <div class="corner-label corner-label-bl">Bottom Left</div>
+            <div class="corner-label corner-label-br">Bottom Right</div>
+            
+            <div class="corner-color corner-tl orange" onclick="cycleCornerColor('tl')"></div>
+            <div class="corner-color corner-tr orange" onclick="cycleCornerColor('tr')"></div>
+            <div class="corner-color corner-bl orange" onclick="cycleCornerColor('bl')"></div>
+            <div class="corner-color corner-br orange" onclick="cycleCornerColor('br')"></div>
+            
+            <div class="grid" id="grid"></div>
+        </div>
         <button onclick="setRandomGrid()">Random Grid</button>
         <button onclick="solvePuzzle()">Solve Puzzle</button>
     </div>
 
-    <div class="corner-colors">
-        <h2>Set Corner Colors</h2>
-        <div>
-            <label>Top Left: 
-                <select id="corner-tl">
-                    <option value="orange">Orange</option>
-                    <option value="yellow">Yellow</option>
-                    <option value="blue">Blue</option>
-                    <option value="black">Black</option>
-                    <option value="gray">Gray</option>
-                </select>
-            </label>
-        </div>
-        <div>
-            <label>Top Right: 
-                <select id="corner-tr">
-                    <option value="orange">Orange</option>
-                    <option value="yellow">Yellow</option>
-                    <option value="blue">Blue</option>
-                    <option value="black">Black</option>
-                    <option value="gray">Gray</option>
-                </select>
-            </label>
-        </div>
-        <div>
-            <label>Bottom Left: 
-                <select id="corner-bl">
-                    <option value="orange">Orange</option>
-                    <option value="yellow">Yellow</option>
-                    <option value="blue">Blue</option>
-                    <option value="black">Black</option>
-                    <option value="gray">Gray</option>
-                </select>
-            </label>
-        </div>
-        <div>
-            <label>Bottom Right: 
-                <select id="corner-br">
-                    <option value="orange">Orange</option>
-                    <option value="yellow">Yellow</option>
-                    <option value="blue">Blue</option>
-                    <option value="black">Black</option>
-                    <option value="gray">Gray</option>
-                </select>
-            </label>
-        </div>
+    <div class="solution" id="solution">
+        <h2>Solution Steps</h2>
+        <ol class="solution-steps" id="solution-steps"></ol>
     </div>
-
-    <div class="solution" id="solution"></div>
 
     <script src="script.js"></script>
 </body>

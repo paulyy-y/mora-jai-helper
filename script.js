@@ -11,12 +11,6 @@ function initializeGrid() {
     const gridElement = document.getElementById('grid');
     gridElement.innerHTML = '';
     
-    // Set default corner colors
-    document.getElementById('corner-tl').value = 'orange';
-    document.getElementById('corner-tr').value = 'orange';
-    document.getElementById('corner-bl').value = 'orange';
-    document.getElementById('corner-br').value = 'orange';
-    
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
             const tile = document.createElement('div');
@@ -35,6 +29,18 @@ function cycleTileColor(row, col) {
     const nextIndex = (currentIndex + 1) % colors.length;
     grid[row][col] = colors[nextIndex];
     updateGridDisplay();
+}
+
+// Cycle through colors when clicking a corner
+function cycleCornerColor(corner) {
+    const cornerElement = document.querySelector(`.corner-${corner}`);
+    const currentColor = cornerElement.className.split(' ').find(c => colors.includes(c));
+    const currentIndex = colors.indexOf(currentColor);
+    const nextIndex = (currentIndex + 1) % colors.length;
+    
+    // Remove current color class and add new one
+    cornerElement.classList.remove(currentColor);
+    cornerElement.classList.add(colors[nextIndex]);
 }
 
 // Update the visual display of the grid
@@ -60,10 +66,10 @@ function setRandomGrid() {
 // Get the corner colors from the UI
 function getCornerColors() {
     return {
-        topLeft: document.getElementById('corner-tl').value,
-        topRight: document.getElementById('corner-tr').value,
-        bottomLeft: document.getElementById('corner-bl').value,
-        bottomRight: document.getElementById('corner-br').value
+        topLeft: document.querySelector('.corner-tl').className.split(' ').find(c => colors.includes(c)),
+        topRight: document.querySelector('.corner-tr').className.split(' ').find(c => colors.includes(c)),
+        bottomLeft: document.querySelector('.corner-bl').className.split(' ').find(c => colors.includes(c)),
+        bottomRight: document.querySelector('.corner-br').className.split(' ').find(c => colors.includes(c))
     };
 }
 
@@ -206,18 +212,52 @@ function solvePuzzle() {
 
 // Display the solution
 function displaySolution(moves) {
-    const solutionDiv = document.getElementById('solution');
+    const solutionSteps = document.getElementById('solution-steps');
+    solutionSteps.innerHTML = '';
+    
     if (moves.length === 0) {
-        solutionDiv.textContent = 'Puzzle is already solved!';
+        const step = document.createElement('li');
+        step.className = 'solution-step';
+        step.textContent = 'Puzzle is already solved!';
+        solutionSteps.appendChild(step);
         return;
     }
     
-    let solutionText = 'Solution steps:\n';
     moves.forEach((move, index) => {
-        solutionText += `${index + 1}. Click tile at row ${move.row + 1}, column ${move.col + 1}\n`;
+        const step = document.createElement('li');
+        step.className = 'solution-step';
+        
+        // Add step number
+        const stepNumber = document.createElement('span');
+        stepNumber.className = 'step-number';
+        stepNumber.textContent = `${index + 1}.`;
+        step.appendChild(stepNumber);
+        
+        // Add step text
+        const stepText = document.createElement('span');
+        stepText.className = 'step-text';
+        stepText.textContent = `Click tile at row ${move.row + 1}, column ${move.col + 1}`;
+        step.appendChild(stepText);
+        
+        // Add visual grid
+        const stepGrid = document.createElement('div');
+        stepGrid.className = 'step-grid';
+        
+        // Create 3x3 grid
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                const tile = document.createElement('div');
+                tile.className = 'step-tile';
+                if (i === move.row && j === move.col) {
+                    tile.classList.add('target');
+                }
+                stepGrid.appendChild(tile);
+            }
+        }
+        
+        step.appendChild(stepGrid);
+        solutionSteps.appendChild(step);
     });
-    
-    solutionDiv.textContent = solutionText;
 }
 
 // Initialize the game
