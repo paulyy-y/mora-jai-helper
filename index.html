@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mora Jai Puzzle Solver</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 5px;
+            margin: 20px 0;
+        }
+        .tile {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .corner-colors {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .solution {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .orange { background-color: #FFA500; }
+        .yellow { background-color: #FFD700; }
+        .blue { background-color: #0000FF; }
+        .black { background-color: #000000; }
+        .gray { background-color: #808080; }
+    </style>
+</head>
+<body>
+    <h1>Mora Jai Puzzle Solver</h1>
+    
+    <div class="controls">
+        <h2>Set Initial Grid</h2>
+        <div class="grid" id="grid"></div>
+        <button onclick="setRandomGrid()">Random Grid</button>
+        <button onclick="solvePuzzle()">Solve Puzzle</button>
+    </div>
+
+    <div class="corner-colors">
+        <h2>Set Corner Colors</h2>
+        <div>
+            <label>Top Left: 
+                <select id="corner-tl">
+                    <option value="orange">Orange</option>
+                    <option value="yellow">Yellow</option>
+                    <option value="blue">Blue</option>
+                    <option value="black">Black</option>
+                    <option value="gray">Gray</option>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>Top Right: 
+                <select id="corner-tr">
+                    <option value="orange">Orange</option>
+                    <option value="yellow">Yellow</option>
+                    <option value="blue">Blue</option>
+                    <option value="black">Black</option>
+                    <option value="gray">Gray</option>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>Bottom Left: 
+                <select id="corner-bl">
+                    <option value="orange">Orange</option>
+                    <option value="yellow">Yellow</option>
+                    <option value="blue">Blue</option>
+                    <option value="black">Black</option>
+                    <option value="gray">Gray</option>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>Bottom Right: 
+                <select id="corner-br">
+                    <option value="orange">Orange</option>
+                    <option value="yellow">Yellow</option>
+                    <option value="blue">Blue</option>
+                    <option value="black">Black</option>
+                    <option value="gray">Gray</option>
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <div class="solution" id="solution"></div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
