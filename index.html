@@ -16,7 +16,7 @@
             position: relative;
             width: 310px;
             margin: 0 auto;
-            padding: 50px;
+            padding: 0;
         }
         .grid {
             display: grid;
@@ -46,30 +46,27 @@
             border: 2px solid #333;
             cursor: pointer;
             transition: transform 0.2s;
-            margin: 0 10px;
+            position: absolute;
+            z-index: 2;
         }
         .corner-color:hover {
             transform: scale(1.1);
         }
         .corner-tl {
-            position: absolute;
-            top: 0;
-            left: 0;
+            top: -25px;
+            left: -25px;
         }
         .corner-tr {
-            position: absolute;
-            top: 0;
-            right: 0;
+            top: -25px;
+            right: -25px;
         }
         .corner-bl {
-            position: absolute;
-            bottom: 0;
-            left: 0;
+            bottom: -25px;
+            left: -25px;
         }
         .corner-br {
-            position: absolute;
-            bottom: 0;
-            right: 0;
+            bottom: -25px;
+            right: -25px;
         }
         .controls {
             margin: 20px 0;
@@ -244,28 +241,12 @@
     
     <div class="controls">
         <h2>Set Initial Grid</h2>
-        <div class="corner-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <span class="corner-label">Top Left</span>
-                <div class="corner-color corner-tl orange" onclick="cycleCornerColor('tl')"></div>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <span class="corner-label">Top Right</span>
-                <div class="corner-color corner-tr orange" onclick="cycleCornerColor('tr')"></div>
-            </div>
-        </div>
-        <div class="grid-container" style="margin: 0 auto;">
+        <div class="grid-container" style="margin: 0 auto; position: relative; width: 310px;">
+            <div class="corner-color corner-tl orange" onclick="cycleCornerColor('tl')"></div>
+            <div class="corner-color corner-tr orange" onclick="cycleCornerColor('tr')"></div>
+            <div class="corner-color corner-bl orange" onclick="cycleCornerColor('bl')"></div>
+            <div class="corner-color corner-br orange" onclick="cycleCornerColor('br')"></div>
             <div class="grid" id="grid"></div>
-        </div>
-        <div class="corner-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <div class="corner-color corner-bl orange" onclick="cycleCornerColor('bl')"></div>
-                <span class="corner-label">Bottom Left</span>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <div class="corner-color corner-br orange" onclick="cycleCornerColor('br')"></div>
-                <span class="corner-label">Bottom Right</span>
-            </div>
         </div>
         <div class="button-group">
             <button onclick="setRandomGrid()">Random Grid</button>
