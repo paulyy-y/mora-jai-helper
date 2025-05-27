@@ -15,7 +15,8 @@
         .grid-container {
             position: relative;
             width: 310px;
-            margin: 20px auto;
+            margin: 0 auto;
+            padding: 50px;
         }
         .grid {
             display: grid;
@@ -45,29 +46,30 @@
             border: 2px solid #333;
             cursor: pointer;
             transition: transform 0.2s;
+            margin: 0 10px;
         }
         .corner-color:hover {
             transform: scale(1.1);
         }
         .corner-tl {
             position: absolute;
-            top: -50px;
-            left: -50px;
+            top: 0;
+            left: 0;
         }
         .corner-tr {
             position: absolute;
-            top: -50px;
-            right: -50px;
+            top: 0;
+            right: 0;
         }
         .corner-bl {
             position: absolute;
-            bottom: -50px;
-            left: -50px;
+            bottom: 0;
+            left: 0;
         }
         .corner-br {
             position: absolute;
-            bottom: -50px;
-            right: -50px;
+            bottom: 0;
+            right: 0;
         }
         .controls {
             margin: 20px 0;
@@ -130,24 +132,96 @@
         .step-text {
             flex-grow: 1;
         }
+        .board-state {
+            display: grid;
+            grid-template-columns: repeat(3, 30px);
+            gap: 2px;
+            margin-left: 20px;
+            border: 2px solid #333;
+            padding: 2px;
+            background-color: #fff;
+        }
+        .board-tile {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+        }
+        .board-tile.white {
+            color: black;
+            text-shadow: none;
+        }
+        .step-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .step-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
         .orange { background-color: #FFA500; }
         .yellow { background-color: #FFD700; }
         .blue { background-color: #0000FF; }
         .black { background-color: #000000; }
         .gray { background-color: #808080; }
+        .pink { background-color: #FF69B4; }
+        .purple { background-color: #800080; }
+        .white { background-color: #FFFFFF; color: #000000; text-shadow: none; }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .save-load-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            margin: 10px 0;
+            justify-content: center;
+        }
+        
+        .save-name {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 150px;
+        }
+
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            min-width: 150px;
+        }
+
         button {
-            padding: 10px 20px;
-            margin: 5px;
+            padding: 8px 16px;
+            margin: 0;
             border: none;
             border-radius: 4px;
             background-color: #007bff;
             color: white;
             cursor: pointer;
             transition: background-color 0.2s;
+            white-space: nowrap;
         }
+
         button:hover {
             background-color: #0056b3;
         }
+
         h1 {
             color: #333;
             text-align: center;
@@ -157,15 +231,12 @@
             color: #444;
             margin-bottom: 15px;
         }
-        .corner-label {
-            position: absolute;
+        .corner-label, .corner-label-tl, .corner-label-tr, .corner-label-bl, .corner-label-br {
+            position: static !important;
             font-size: 12px;
             color: #666;
+            margin: 2px 0 2px 0;
         }
-        .corner-label-tl { top: -70px; left: -50px; }
-        .corner-label-tr { top: -70px; right: -50px; }
-        .corner-label-bl { bottom: -70px; left: -50px; }
-        .corner-label-br { bottom: -70px; right: -50px; }
     </style>
 </head>
 <body>
@@ -173,21 +244,40 @@
     
     <div class="controls">
         <h2>Set Initial Grid</h2>
-        <div class="grid-container">
-            <div class="corner-label corner-label-tl">Top Left</div>
-            <div class="corner-label corner-label-tr">Top Right</div>
-            <div class="corner-label corner-label-bl">Bottom Left</div>
-            <div class="corner-label corner-label-br">Bottom Right</div>
-            
-            <div class="corner-color corner-tl orange" onclick="cycleCornerColor('tl')"></div>
-            <div class="corner-color corner-tr orange" onclick="cycleCornerColor('tr')"></div>
-            <div class="corner-color corner-bl orange" onclick="cycleCornerColor('bl')"></div>
-            <div class="corner-color corner-br orange" onclick="cycleCornerColor('br')"></div>
-            
+        <div class="corner-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <span class="corner-label">Top Left</span>
+                <div class="corner-color corner-tl orange" onclick="cycleCornerColor('tl')"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <span class="corner-label">Top Right</span>
+                <div class="corner-color corner-tr orange" onclick="cycleCornerColor('tr')"></div>
+            </div>
+        </div>
+        <div class="grid-container" style="margin: 0 auto;">
             <div class="grid" id="grid"></div>
         </div>
-        <button onclick="setRandomGrid()">Random Grid</button>
-        <button onclick="solvePuzzle()">Solve Puzzle</button>
+        <div class="corner-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <div class="corner-color corner-bl orange" onclick="cycleCornerColor('bl')"></div>
+                <span class="corner-label">Bottom Left</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <div class="corner-color corner-br orange" onclick="cycleCornerColor('br')"></div>
+                <span class="corner-label">Bottom Right</span>
+            </div>
+        </div>
+        <div class="button-group">
+            <button onclick="setRandomGrid()">Random Grid</button>
+            <button onclick="solvePuzzle()">Solve Puzzle</button>
+            <div class="save-load-group">
+                <input type="text" id="saveName" class="save-name" placeholder="Puzzle name">
+                <button onclick="savePuzzle()">Save</button>
+                <select id="loadPuzzle" onchange="loadPuzzle()">
+                    <option value="">Load saved puzzle...</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <div class="solution" id="solution">

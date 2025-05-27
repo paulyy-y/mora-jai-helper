@@ -7,6 +7,7 @@ Tile Colors and Behaviors
 - Blue: Copies the action of the item in the center of the board.
 - Black: Shifts row to the right. Loops over.
 - Pink: Rotates all neighbors clockwise.
+- White: Turns itself and all white ADJACENT neighbors into Gray tiles. Turns all ADJACENT Gray tiles into White. Adjacent means directly connected, not diagonal. If this is Blue Tile copying behavior, the Grays would become blue.
 - Gray: Does nothing.
 
 Create an HTML/JS application that will allow user to input the starting tiles + colors as well as the corner colors. And once that is done, provide a set of moves that must be taken in sequence in order to solve the puzzle.

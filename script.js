@@ -4,7 +4,7 @@ let grid = [
     ['yellow', 'orange', 'black'],
     ['blue', 'blue', 'orange']
 ];
-const colors = ['orange', 'yellow', 'blue', 'black', 'gray'];
+const colors = ['orange', 'yellow', 'blue', 'black', 'gray', 'pink', 'purple', 'white'];
 
 // Initialize the grid
 function initializeGrid() {
@@ -91,7 +91,7 @@ function getAdjacentTiles(currentGrid, row, col) {
         const newRow = row + dx;
         const newCol = col + dy;
         if (newRow >= 0 && newRow < 3 && newCol >= 0 && newCol < 3) {
-            adjacent.push(currentGrid[newRow][newCol]);
+            adjacent.push({row: newRow, col: newCol, color: currentGrid[newRow][newCol]});
         }
     }
     return adjacent;
@@ -117,6 +117,81 @@ function getMajorityColor(adjacent) {
     return maxCount > 1 ? majorityColor : null;
 }
 
+// Get all neighbors for a given position in clockwise order
+function getAllNeighborsClockwise(currentGrid, row, col) {
+    const neighbors = [];
+    // Define positions in clockwise order: top, top-right, right, bottom-right, bottom, bottom-left, left, top-left
+    const positions = [
+        {row: row-1, col: col},      // top
+        {row: row-1, col: col+1},    // top-right
+        {row: row, col: col+1},      // right
+        {row: row+1, col: col+1},    // bottom-right
+        {row: row+1, col: col},      // bottom
+        {row: row+1, col: col-1},    // bottom-left
+        {row: row, col: col-1},      // left
+        {row: row-1, col: col-1}     // top-left
+    ];
+    
+    for (const pos of positions) {
+        if (pos.row >= 0 && pos.row < 3 && pos.col >= 0 && pos.col < 3) {
+            neighbors.push({
+                row: pos.row,
+                col: pos.col,
+                color: currentGrid[pos.row][pos.col]
+            });
+        }
+    }
+    return neighbors;
+}
+
+// Rotate neighbors clockwise
+function rotateNeighborsClockwise(currentGrid, row, col) {
+    const neighbors = getAllNeighborsClockwise(currentGrid, row, col);
+    if (neighbors.length < 2) return currentGrid;
+    
+    const newGrid = JSON.parse(JSON.stringify(currentGrid));
+    const colors = neighbors.map(n => n.color);
+    colors.unshift(colors.pop()); // Rotate colors clockwise
+    
+    neighbors.forEach((pos, i) => {
+        newGrid[pos.row][pos.col] = colors[i];
+    });
+    
+    return newGrid;
+}
+
+// Apply white tile transformation
+function applyWhiteTileTransformation(currentGrid, row, col, targetColor = 'gray') {
+    const newGrid = JSON.parse(JSON.stringify(currentGrid));
+    const adjacent = getAdjacentTiles(currentGrid, row, col);
+    
+    // First, handle the clicked tile - always turn into Gray
+    newGrid[row][col] = 'gray';
+    
+    // Then handle adjacent tiles
+    adjacent.forEach(pos => {
+        if (targetColor === 'blue') {
+            // When Blue copies White behavior:
+            // - Only turn Gray tiles to Blue
+            // - Don't affect White tiles
+            if (currentGrid[pos.row][pos.col] === 'gray') {
+                newGrid[pos.row][pos.col] = 'blue';
+            }
+        } else {
+            // Regular White tile behavior:
+            // - Turn White tiles to Gray
+            // - Turn Gray tiles to White
+            if (currentGrid[pos.row][pos.col] === 'white') {
+                newGrid[pos.row][pos.col] = 'gray';
+            } else if (currentGrid[pos.row][pos.col] === 'gray') {
+                newGrid[pos.row][pos.col] = 'white';
+            }
+        }
+    });
+    
+    return newGrid;
+}
+
 // Apply tile actions
 function applyTileAction(currentGrid, row, col) {
     const color = currentGrid[row][col];
@@ -125,7 +200,7 @@ function applyTileAction(currentGrid, row, col) {
     switch (color) {
         case 'orange':
             const adjacent = getAdjacentTiles(currentGrid, row, col);
-            const majorityColor = getMajorityColor(adjacent);
+            const majorityColor = getMajorityColor(adjacent.map(a => a.color));
             if (majorityColor) {
                 newGrid[row][col] = majorityColor;
             }
@@ -137,6 +212,12 @@ function applyTileAction(currentGrid, row, col) {
             }
             break;
             
+        case 'purple':
+            if (row < 2) {
+                [newGrid[row][col], newGrid[row+1][col]] = [newGrid[row+1][col], newGrid[row][col]];
+            }
+            break;
+            
         case 'blue':
             const centerColor = currentGrid[1][1];
             if (centerColor !== 'blue') {
@@ -144,7 +225,7 @@ function applyTileAction(currentGrid, row, col) {
                 switch (centerColor) {
                     case 'orange':
                         const centerAdjacent = getAdjacentTiles(currentGrid, row, col);
-                        const centerMajority = getMajorityColor(centerAdjacent);
+                        const centerMajority = getMajorityColor(centerAdjacent.map(a => a.color));
                         if (centerMajority) {
                             newGrid[row][col] = centerMajority;
                         }
@@ -153,6 +234,17 @@ function applyTileAction(currentGrid, row, col) {
                         if (row > 0) {
                             [newGrid[row][col], newGrid[row-1][col]] = [newGrid[row-1][col], newGrid[row][col]];
                         }
+                        break;
+                    case 'purple':
+                        if (row < 2) {
+                            [newGrid[row][col], newGrid[row+1][col]] = [newGrid[row+1][col], newGrid[row][col]];
+                        }
+                        break;
+                    case 'pink':
+                        newGrid = rotateNeighborsClockwise(newGrid, row, col);
+                        break;
+                    case 'white':
+                        newGrid = applyWhiteTileTransformation(newGrid, row, col, 'blue');
                         break;
                     case 'black':
                         const rowToShift = [...newGrid[row]];
@@ -167,6 +259,14 @@ function applyTileAction(currentGrid, row, col) {
             const rowToShift = [...newGrid[row]];
             rowToShift.unshift(rowToShift.pop());
             newGrid[row] = rowToShift;
+            break;
+            
+        case 'pink':
+            newGrid = rotateNeighborsClockwise(newGrid, row, col);
+            break;
+            
+        case 'white':
+            newGrid = applyWhiteTileTransformation(newGrid, row, col);
             break;
             
         case 'gray':
@@ -191,7 +291,7 @@ function solvePuzzle() {
         visited.add(gridKey);
         
         if (isSolved(currentGrid)) {
-            displaySolution(moves);
+            displaySolution(moves, currentGrid);
             return;
         }
         
@@ -201,7 +301,7 @@ function solvePuzzle() {
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
                 const newGrid = applyTileAction(currentGrid, i, j);
-                const newMoves = [...moves, {row: i, col: j}];
+                const newMoves = [...moves, {row: i, col: j, grid: newGrid}];
                 queue.push([newGrid, newMoves]);
             }
         }
@@ -210,8 +310,25 @@ function solvePuzzle() {
     document.getElementById('solution').textContent = 'No solution found within depth limit!';
 }
 
+// Create a board state display
+function createBoardState(grid) {
+    const boardState = document.createElement('div');
+    boardState.className = 'board-state';
+    
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            const tile = document.createElement('div');
+            tile.className = `board-tile ${grid[i][j]}`;
+            tile.textContent = grid[i][j].charAt(0).toUpperCase();
+            boardState.appendChild(tile);
+        }
+    }
+    
+    return boardState;
+}
+
 // Display the solution
-function displaySolution(moves) {
+function displaySolution(moves, finalGrid) {
     const solutionSteps = document.getElementById('solution-steps');
     solutionSteps.innerHTML = '';
     
@@ -223,23 +340,48 @@ function displaySolution(moves) {
         return;
     }
     
+    // Show initial state
+    const initialStep = document.createElement('li');
+    initialStep.className = 'solution-step';
+    const initialContainer = document.createElement('div');
+    initialContainer.className = 'step-container';
+    
+    const initialNumber = document.createElement('span');
+    initialNumber.className = 'step-number';
+    initialNumber.textContent = '0.';
+    
+    const initialText = document.createElement('span');
+    initialText.className = 'step-text';
+    initialText.textContent = 'Initial state';
+    
+    const initialInfo = document.createElement('div');
+    initialInfo.className = 'step-info';
+    initialInfo.appendChild(initialNumber);
+    initialInfo.appendChild(initialText);
+    
+    initialContainer.appendChild(initialInfo);
+    initialContainer.appendChild(createBoardState(grid));
+    initialStep.appendChild(initialContainer);
+    solutionSteps.appendChild(initialStep);
+    
+    // Show each move and resulting state
     moves.forEach((move, index) => {
         const step = document.createElement('li');
         step.className = 'solution-step';
+        const container = document.createElement('div');
+        container.className = 'step-container';
         
-        // Add step number
+        const stepInfo = document.createElement('div');
+        stepInfo.className = 'step-info';
+        
         const stepNumber = document.createElement('span');
         stepNumber.className = 'step-number';
         stepNumber.textContent = `${index + 1}.`;
-        step.appendChild(stepNumber);
         
-        // Add step text
         const stepText = document.createElement('span');
         stepText.className = 'step-text';
         stepText.textContent = `Click tile at row ${move.row + 1}, column ${move.col + 1}`;
-        step.appendChild(stepText);
         
-        // Add visual grid
         const stepGrid = document.createElement('div');
         stepGrid.className = 'step-grid';
         
@@ -255,10 +397,98 @@ function displaySolution(moves) {
             }
         }
         
-        step.appendChild(stepGrid);
+        stepInfo.appendChild(stepNumber);
+        stepInfo.appendChild(stepText);
+        stepInfo.appendChild(stepGrid);
+        
+        container.appendChild(stepInfo);
+        container.appendChild(createBoardState(move.grid));
+        step.appendChild(container);
         solutionSteps.appendChild(step);
     });
 }
 
+// Save current puzzle state
+function savePuzzle() {
+    const saveName = document.getElementById('saveName').value.trim();
+    if (!saveName) {
+        alert('Please enter a name for the puzzle');
+        return;
+    }
+    
+    const puzzleState = {
+        grid: grid,
+        corners: {
+            topLeft: document.querySelector('.corner-tl').className.split(' ').find(c => colors.includes(c)),
+            topRight: document.querySelector('.corner-tr').className.split(' ').find(c => colors.includes(c)),
+            bottomLeft: document.querySelector('.corner-bl').className.split(' ').find(c => colors.includes(c)),
+            bottomRight: document.querySelector('.corner-br').className.split(' ').find(c => colors.includes(c))
+        }
+    };
+    
+    // Get existing saved puzzles
+    const savedPuzzles = JSON.parse(sessionStorage.getItem('moraJaiPuzzles') || '{}');
+    savedPuzzles[saveName] = puzzleState;
+    sessionStorage.setItem('moraJaiPuzzles', JSON.stringify(savedPuzzles));
+    
+    // Update the load dropdown
+    updateLoadDropdown();
+    
+    // Clear the save name input
+    document.getElementById('saveName').value = '';
+    
+    alert('Puzzle saved successfully!');
+}
+
+// Load a saved puzzle
+function loadPuzzle() {
+    const select = document.getElementById('loadPuzzle');
+    const puzzleName = select.value;
+    if (!puzzleName) return;
+    
+    const savedPuzzles = JSON.parse(sessionStorage.getItem('moraJaiPuzzles') || '{}');
+    const puzzleState = savedPuzzles[puzzleName];
+    
+    if (puzzleState) {
+        // Update grid
+        grid = JSON.parse(JSON.stringify(puzzleState.grid));
+        updateGridDisplay();
+        
+        // Update corner colors
+        document.querySelector('.corner-tl').className = `corner-color corner-tl ${puzzleState.corners.topLeft}`;
+        document.querySelector('.corner-tr').className = `corner-color corner-tr ${puzzleState.corners.topRight}`;
+        document.querySelector('.corner-bl').className = `corner-color corner-bl ${puzzleState.corners.bottomLeft}`;
+        document.querySelector('.corner-br').className = `corner-color corner-br ${puzzleState.corners.bottomRight}`;
+        
+        // Clear solution
+        document.getElementById('solution-steps').innerHTML = '';
+    }
+}
+
+// Update the load puzzle dropdown
+function updateLoadDropdown() {
+    const select = document.getElementById('loadPuzzle');
+    const savedPuzzles = JSON.parse(sessionStorage.getItem('moraJaiPuzzles') || '{}');
+    
+    // Clear existing options except the first one
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+    
+    // Add saved puzzles
+    Object.keys(savedPuzzles).sort().forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+}
+
 // Initialize the game
-initializeGrid(); 
+function initializeGame() {
+    initializeGrid();
+    updateLoadDropdown();
+}
+
+// Call initializeGame instead of just initializeGrid
+initializeGame(); 
