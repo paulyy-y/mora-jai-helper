@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mora Jai Puzzle Solver - A tool to help solve and visualize Mora Jai puzzles with step-by-step solutions">
     <title>Mora Jai Puzzle Solver</title>
     <style>
         body {
@@ -234,6 +235,113 @@
             color: #666;
             margin: 2px 0 2px 0;
         }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 300px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 8px;
+            position: relative;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .close-modal {
+            position: sticky;
+            top: 0;
+            right: 0;
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #fefefe;
+            padding: 0 5px;
+            z-index: 1;
+        }
+        .close-modal:hover {
+            color: black;
+        }
+        .info-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .info-button:hover {
+            background-color: #0056b3;
+            transform: scale(1.1);
+        }
+        kbd {
+            background-color: #f7f7f7;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+            color: #333;
+            display: inline-block;
+            font-size: 0.85em;
+            font-weight: 700;
+            line-height: 1;
+            padding: 2px 4px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -266,6 +374,64 @@
         <ol class="solution-steps" id="solution-steps"></ol>
     </div>
 
+    <button class="info-button" onclick="showInfo()">?</button>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="hideInfo()">&times;</span>
+            <h2>About Mora Jai Puzzle Solver</h2>
+            <p>Welcome to the Mora Jai Puzzle Solver! This tool helps you solve Mora Jai puzzles by allowing you to set up the initial grid state and providing step-by-step solutions.</p>
+            
+            <h3>How to Use:</h3>
+            <ol>
+                <li>Set the corner colors using the colored squares in each corner</li>
+                <li>Click on grid tiles to cycle through colors</li>
+                <li>Click "Solve Puzzle" to get step-by-step solution</li>
+                <li>Save your puzzles using the save feature</li>
+                <li>Load previously saved puzzles from the dropdown</li>
+            </ol>
+
+            <h3>Features:</h3>
+            <ul>
+                <li>Interactive grid setup</li>
+                <li>Step-by-step solution visualization</li>
+                <li>Save and load puzzle states</li>
+                <li>Random grid generation</li>
+            </ul>
+
+            <h3>Keyboard Shortcuts:</h3>
+            <p>Hover over a tile or corner and press the following keys to change colors:</p>
+            <ul>
+                <li><kbd>O</kbd> - Orange</li>
+                <li><kbd>Y</kbd> - Yellow</li>
+                <li><kbd>B</kbd> - Blue</li>
+                <li><kbd>K</kbd> - Black</li>
+                <li><kbd>G</kbd> - Gray</li>
+                <li><kbd>P</kbd> - Pink</li>
+                <li><kbd>U</kbd> - Purple</li>
+                <li><kbd>W</kbd> - White</li>
+            </ul>
+            <p><em>Tip: You can also use Tab to navigate between tiles and corners, then use the keyboard shortcuts to change colors.</em></p>
+        </div>
+    </div>
+
+    <script>
+        function showInfo() {
+            document.getElementById('infoModal').style.display = 'block';
+        }
+
+        function hideInfo() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('infoModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
     <script src="script.js"></script>
 </body>
 </html> 
