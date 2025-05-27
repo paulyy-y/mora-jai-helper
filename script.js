@@ -6,6 +6,22 @@ let grid = [
 ];
 const colors = ['orange', 'yellow', 'blue', 'black', 'gray', 'pink', 'purple', 'white'];
 
+// Map first letter to color
+const colorKeyMap = {
+    o: 'orange',
+    y: 'yellow',
+    b: 'blue',
+    k: 'black', // 'k' for black to avoid conflict with blue
+    g: 'gray',
+    p: 'pink',
+    u: 'purple', // 'u' for purple to avoid conflict with pink
+    w: 'white'
+};
+
+// Track hovered tile or corner
+let hoveredTile = null;
+let hoveredCorner = null;
+
 // Initialize the grid
 function initializeGrid() {
     const gridElement = document.getElementById('grid');
@@ -51,6 +67,7 @@ function updateGridDisplay() {
         const col = parseInt(tile.dataset.col);
         tile.className = `tile ${grid[row][col]}`;
     });
+    enableTileHoverTracking();
 }
 
 // Set a random initial grid
@@ -484,10 +501,67 @@ function updateLoadDropdown() {
     });
 }
 
+// Add keyboard support for grid tiles
+function enableTileHoverTracking() {
+    const tiles = document.querySelectorAll('.tile');
+    tiles.forEach(tile => {
+        tile.onmouseenter = () => { hoveredTile = tile; };
+        tile.onmouseleave = () => { if (hoveredTile === tile) hoveredTile = null; };
+    });
+}
+
+// Add keyboard support for corner selectors
+function enableCornerHoverTracking() {
+    const corners = document.querySelectorAll('.corner-color');
+    corners.forEach(corner => {
+        corner.onmouseenter = () => { hoveredCorner = corner; };
+        corner.onmouseleave = () => { if (hoveredCorner === corner) hoveredCorner = null; };
+    });
+}
+
+function handleGlobalKeydown(e) {
+    const key = e.key.toLowerCase();
+    if (!colorKeyMap[key]) return;
+    // Priority: hovered tile > focused tile > hovered corner > focused corner
+    if (hoveredTile) {
+        const row = parseInt(hoveredTile.dataset.row);
+        const col = parseInt(hoveredTile.dataset.col);
+        grid[row][col] = colorKeyMap[key];
+        updateGridDisplay();
+        hoveredTile.focus();
+        return;
+    }
+    const active = document.activeElement;
+    if (active && active.classList.contains('tile')) {
+        const row = parseInt(active.dataset.row);
+        const col = parseInt(active.dataset.col);
+        grid[row][col] = colorKeyMap[key];
+        updateGridDisplay();
+        active.focus();
+        return;
+    }
+    if (hoveredCorner) {
+        colors.forEach(c => hoveredCorner.classList.remove(c));
+        hoveredCorner.classList.add(colorKeyMap[key]);
+        hoveredCorner.focus();
+        return;
+    }
+    if (active && active.classList.contains('corner-color')) {
+        colors.forEach(c => active.classList.remove(c));
+        active.classList.add(colorKeyMap[key]);
+        active.focus();
+        return;
+    }
+}
+
 // Initialize the game
 function initializeGame() {
     initializeGrid();
     updateLoadDropdown();
+    enableTileHoverTracking();
+    enableCornerHoverTracking();
+    window.removeEventListener('keydown', handleGlobalKeydown);
+    window.addEventListener('keydown', handleGlobalKeydown);
 }
 
 // Call initializeGame instead of just initializeGrid
