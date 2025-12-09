@@ -180,7 +180,7 @@
             justify-content: center;
             align-items: center;
         }
-        
+
         .save-load-group {
             display: flex;
             gap: 5px;
@@ -188,7 +188,7 @@
             margin: 10px 0;
             justify-content: center;
         }
-        
+
         .save-name {
             padding: 8px;
             border: 1px solid #ddd;
@@ -329,6 +329,30 @@
             background-color: #0056b3;
             transform: scale(1.1);
         }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        button:disabled:hover {
+            background-color: #6c757d;
+        }
+        .cancel-btn {
+            background-color: #dc3545;
+            display: none;
+        }
+        .cancel-btn:hover {
+            background-color: #c82333;
+        }
+        .solver-status {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #495057;
+            text-align: center;
+        }
         kbd {
             background-color: #f7f7f7;
             border: 1px solid #ccc;
@@ -346,7 +370,7 @@
 </head>
 <body>
     <h1>Mora Jai Puzzle Solver</h1>
-    
+
     <div class="controls">
         <h2>Set Initial Grid</h2>
         <div class="grid-container" style="margin: 0 auto; position: relative; width: 310px;">
@@ -358,7 +382,8 @@
         </div>
         <div class="button-group">
             <button onclick="setRandomGrid()">Random Grid</button>
-            <button onclick="solvePuzzle()">Solve Puzzle</button>
+            <button id="solveBtn" onclick="solvePuzzle()">Solve Puzzle</button>
+            <button id="cancelBtn" class="cancel-btn" onclick="cancelSolve()">Cancel</button>
             <div class="save-load-group">
                 <input type="text" id="saveName" class="save-name" placeholder="Puzzle name">
                 <button onclick="savePuzzle()">Save</button>
@@ -367,6 +392,7 @@
                 </select>
             </div>
         </div>
+        <div id="solverStatus" class="solver-status"></div>
     </div>
 
     <div class="solution" id="solution">
@@ -381,7 +407,7 @@
             <span class="close-modal" onclick="hideInfo()">&times;</span>
             <h2>About Mora Jai Puzzle Solver</h2>
             <p>Welcome to the Mora Jai Puzzle Solver! This tool helps you solve Mora Jai puzzles by allowing you to set up the initial grid state and providing step-by-step solutions.</p>
-            
+
             <h3>How to Use:</h3>
             <ol>
                 <li>Set the corner colors using the colored squares in each corner</li>
@@ -434,4 +460,4 @@
     </script>
     <script src="script.js"></script>
 </body>
-</html> 
+</html>

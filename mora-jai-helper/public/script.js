@@ -22,11 +22,27 @@ const colorKeyMap = {
 let hoveredTile = null;
 let hoveredCorner = null;
 
+// Solver state for async operation
+let solverState = {
+    isRunning: false,
+    shouldCancel: false,
+    statesExplored: 0,
+    startTime: 0
+};
+
+// Solver limits
+const SOLVER_LIMITS = {
+    MAX_STATES: 50000,
+    MAX_TIME_MS: 10000,
+    MAX_DEPTH: 15,
+    BATCH_SIZE: 500 // States to process before yielding to UI
+};
+
 // Initialize the grid
 function initializeGrid() {
     const gridElement = document.getElementById('grid');
     gridElement.innerHTML = '';
-    
+
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
             const tile = document.createElement('div');
@@ -53,7 +69,7 @@ function cycleCornerColor(corner) {
     const currentColor = cornerElement.className.split(' ').find(c => colors.includes(c));
     const currentIndex = colors.indexOf(currentColor);
     const nextIndex = (currentIndex + 1) % colors.length;
-    
+
     // Remove current color class and add new one
     cornerElement.classList.remove(currentColor);
     cornerElement.classList.add(colors[nextIndex]);
@@ -70,14 +86,118 @@ function updateGridDisplay() {
     enableTileHoverTracking();
 }
 
-// Set a random initial grid
-function setRandomGrid() {
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            grid[i][j] = colors[Math.floor(Math.random() * colors.length)];
+// Quick solvability check with limited resources
+function quickSolveCheck(testGrid, corners, maxStates = 5000, maxDepth = 12) {
+    const queue = [[testGrid, []]];
+    const visited = new Set();
+
+    while (queue.length > 0 && visited.size < maxStates) {
+        const [currentGrid, moves] = queue.shift();
+        const gridKey = JSON.stringify(currentGrid);
+
+        if (visited.has(gridKey)) continue;
+        visited.add(gridKey);
+
+        // Check if solved
+        if (currentGrid[0][0] === corners.topLeft &&
+            currentGrid[0][2] === corners.topRight &&
+            currentGrid[2][0] === corners.bottomLeft &&
+            currentGrid[2][2] === corners.bottomRight) {
+            return { solvable: true, moves: moves.length };
+        }
+
+        if (moves.length >= maxDepth) continue;
+
+        // Try all possible moves
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                const newGrid = applyTileAction(currentGrid, i, j);
+                const newGridKey = JSON.stringify(newGrid);
+                if (!visited.has(newGridKey)) {
+                    queue.push([newGrid, [...moves, { row: i, col: j }]]);
+                }
+            }
         }
     }
+
+    return { solvable: false, moves: -1 };
+}
+
+// Check if a grid is already solved
+function isGridSolved(testGrid, corners) {
+    return testGrid[0][0] === corners.topLeft &&
+           testGrid[0][2] === corners.topRight &&
+           testGrid[2][0] === corners.bottomLeft &&
+           testGrid[2][2] === corners.bottomRight;
+}
+
+// Generate a solvable random grid that is NOT already solved
+function setRandomGrid() {
+    const corners = getCornerColors();
+    const maxAttempts = 20;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        // Start with a solved state - corners match their target colors
+        // Fill the rest with random colors
+        const solvedGrid = [
+            [corners.topLeft, colors[Math.floor(Math.random() * colors.length)], corners.topRight],
+            [colors[Math.floor(Math.random() * colors.length)], colors[Math.floor(Math.random() * colors.length)], colors[Math.floor(Math.random() * colors.length)]],
+            [corners.bottomLeft, colors[Math.floor(Math.random() * colors.length)], corners.bottomRight]
+        ];
+
+        // Apply 5-15 random moves to scramble (fewer moves for simpler puzzles)
+        let currentGrid = JSON.parse(JSON.stringify(solvedGrid));
+        const numMoves = 5 + Math.floor(Math.random() * 11); // 5-15 moves
+
+        for (let m = 0; m < numMoves; m++) {
+            const row = Math.floor(Math.random() * 3);
+            const col = Math.floor(Math.random() * 3);
+            currentGrid = applyTileAction(currentGrid, row, col);
+        }
+
+        // Skip if already solved - we want an actual puzzle
+        if (isGridSolved(currentGrid, corners)) {
+            continue;
+        }
+
+        // Verify this grid is solvable with a quick check
+        const result = quickSolveCheck(currentGrid, corners);
+
+        if (result.solvable && result.moves > 0) {
+            // Found a solvable puzzle that requires moves!
+            grid = currentGrid;
+            updateGridDisplay();
+
+            // Clear any previous solution
+            document.getElementById('solution-steps').innerHTML = '';
+            const statusEl = document.getElementById('solverStatus');
+            if (statusEl) statusEl.style.display = 'none';
+            return;
+        }
+    }
+
+    // Fallback: Create a simple but not-solved puzzle
+    // Start solved, then apply moves until not solved
+    grid = [
+        [corners.topLeft, colors[Math.floor(Math.random() * colors.length)], corners.topRight],
+        [colors[Math.floor(Math.random() * colors.length)], colors[Math.floor(Math.random() * colors.length)], colors[Math.floor(Math.random() * colors.length)]],
+        [corners.bottomLeft, colors[Math.floor(Math.random() * colors.length)], corners.bottomRight]
+    ];
+
+    // Keep applying moves until we're not solved
+    for (let m = 0; m < 10; m++) {
+        const row = Math.floor(Math.random() * 3);
+        const col = Math.floor(Math.random() * 3);
+        grid = applyTileAction(grid, row, col);
+        if (!isGridSolved(grid, corners)) {
+            break;
+        }
+    }
+
     updateGridDisplay();
+    document.getElementById('solution-steps').innerHTML = '';
+    const statusEl = document.getElementById('solverStatus');
+    if (statusEl) statusEl.style.display = 'none';
 }
 
 // Get the corner colors from the UI
@@ -103,7 +223,7 @@ function isSolved(currentGrid) {
 function getAdjacentTiles(currentGrid, row, col) {
     const adjacent = [];
     const directions = [[-1,0], [1,0], [0,-1], [0,1]];
-    
+
     for (const [dx, dy] of directions) {
         const newRow = row + dx;
         const newCol = col + dy;
@@ -120,17 +240,17 @@ function getMajorityColor(adjacent) {
     adjacent.forEach(color => {
         counts[color] = (counts[color] || 0) + 1;
     });
-    
+
     let maxCount = 0;
     let majorityColor = null;
-    
+
     for (const [color, count] of Object.entries(counts)) {
         if (count > maxCount) {
             maxCount = count;
             majorityColor = color;
         }
     }
-    
+
     return maxCount > 1 ? majorityColor : null;
 }
 
@@ -148,7 +268,7 @@ function getAllNeighborsClockwise(currentGrid, row, col) {
         {row: row, col: col-1},      // left
         {row: row-1, col: col-1}     // top-left
     ];
-    
+
     for (const pos of positions) {
         if (pos.row >= 0 && pos.row < 3 && pos.col >= 0 && pos.col < 3) {
             neighbors.push({
@@ -165,15 +285,15 @@ function getAllNeighborsClockwise(currentGrid, row, col) {
 function rotateNeighborsClockwise(currentGrid, row, col) {
     const neighbors = getAllNeighborsClockwise(currentGrid, row, col);
     if (neighbors.length < 2) return currentGrid;
-    
+
     const newGrid = JSON.parse(JSON.stringify(currentGrid));
     const colors = neighbors.map(n => n.color);
     colors.unshift(colors.pop()); // Rotate colors clockwise
-    
+
     neighbors.forEach((pos, i) => {
         newGrid[pos.row][pos.col] = colors[i];
     });
-    
+
     return newGrid;
 }
 
@@ -181,10 +301,10 @@ function rotateNeighborsClockwise(currentGrid, row, col) {
 function applyWhiteTileTransformation(currentGrid, row, col, targetColor = 'gray') {
     const newGrid = JSON.parse(JSON.stringify(currentGrid));
     const adjacent = getAdjacentTiles(currentGrid, row, col);
-    
+
     // First, handle the clicked tile - always turn into Gray
     newGrid[row][col] = 'gray';
-    
+
     // Then handle adjacent tiles
     adjacent.forEach(pos => {
         if (targetColor === 'blue') {
@@ -205,7 +325,7 @@ function applyWhiteTileTransformation(currentGrid, row, col, targetColor = 'gray
             }
         }
     });
-    
+
     return newGrid;
 }
 
@@ -213,7 +333,7 @@ function applyWhiteTileTransformation(currentGrid, row, col, targetColor = 'gray
 function applyTileAction(currentGrid, row, col) {
     const color = currentGrid[row][col];
     let newGrid = JSON.parse(JSON.stringify(currentGrid));
-    
+
     switch (color) {
         case 'orange':
             const adjacent = getAdjacentTiles(currentGrid, row, col);
@@ -222,19 +342,19 @@ function applyTileAction(currentGrid, row, col) {
                 newGrid[row][col] = majorityColor;
             }
             break;
-            
+
         case 'yellow':
             if (row > 0) {
                 [newGrid[row][col], newGrid[row-1][col]] = [newGrid[row-1][col], newGrid[row][col]];
             }
             break;
-            
+
         case 'purple':
             if (row < 2) {
                 [newGrid[row][col], newGrid[row+1][col]] = [newGrid[row+1][col], newGrid[row][col]];
             }
             break;
-            
+
         case 'blue':
             const centerColor = currentGrid[1][1];
             if (centerColor !== 'blue') {
@@ -271,67 +391,184 @@ function applyTileAction(currentGrid, row, col) {
                 }
             }
             break;
-            
+
         case 'black':
             const rowToShift = [...newGrid[row]];
             rowToShift.unshift(rowToShift.pop());
             newGrid[row] = rowToShift;
             break;
-            
+
         case 'pink':
             newGrid = rotateNeighborsClockwise(newGrid, row, col);
             break;
-            
+
         case 'white':
             newGrid = applyWhiteTileTransformation(newGrid, row, col);
             break;
-            
+
         case 'gray':
             // Do nothing
             break;
     }
-    
+
     return newGrid;
 }
 
-// Breadth-first search solver with depth limit
-function solvePuzzle() {
-    const MAX_DEPTH = 20; // Limit the search depth to prevent stack overflow
+// Update UI to show solving status
+function updateSolverUI(status, progress = null) {
+    const solveBtn = document.getElementById('solveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const statusEl = document.getElementById('solverStatus');
+
+    if (status === 'solving') {
+        solveBtn.disabled = true;
+        solveBtn.textContent = 'Solving...';
+        cancelBtn.style.display = 'inline-block';
+        if (progress) {
+            statusEl.textContent = `Exploring: ${progress.states.toLocaleString()} states | Depth: ${progress.depth} | Time: ${(progress.time / 1000).toFixed(1)}s`;
+            statusEl.style.display = 'block';
+        }
+    } else if (status === 'idle') {
+        solveBtn.disabled = false;
+        solveBtn.textContent = 'Solve Puzzle';
+        cancelBtn.style.display = 'none';
+        statusEl.style.display = 'none';
+    } else if (status === 'cancelled') {
+        solveBtn.disabled = false;
+        solveBtn.textContent = 'Solve Puzzle';
+        cancelBtn.style.display = 'none';
+        statusEl.textContent = 'Cancelled by user';
+        statusEl.style.display = 'block';
+    } else if (status === 'failed') {
+        solveBtn.disabled = false;
+        solveBtn.textContent = 'Solve Puzzle';
+        cancelBtn.style.display = 'none';
+        if (progress) {
+            statusEl.textContent = progress.message;
+        }
+        statusEl.style.display = 'block';
+    }
+}
+
+// Cancel the current solve operation
+function cancelSolve() {
+    if (solverState.isRunning) {
+        solverState.shouldCancel = true;
+    }
+}
+
+// Yield control back to the browser
+function yieldToUI() {
+    return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+// Async breadth-first search solver with intelligent termination
+async function solvePuzzle() {
+    // Prevent multiple solves at once
+    if (solverState.isRunning) return;
+
+    // Initialize solver state
+    solverState = {
+        isRunning: true,
+        shouldCancel: false,
+        statesExplored: 0,
+        startTime: Date.now()
+    };
+
+    // Clear previous solution
+    document.getElementById('solution-steps').innerHTML = '';
+    updateSolverUI('solving', { states: 0, depth: 0, time: 0 });
+
     const queue = [[JSON.parse(JSON.stringify(grid)), []]];
     const visited = new Set();
-    
-    while (queue.length > 0) {
-        const [currentGrid, moves] = queue.shift();
-        const gridKey = JSON.stringify(currentGrid);
-        
-        if (visited.has(gridKey)) continue;
-        visited.add(gridKey);
-        
-        if (isSolved(currentGrid)) {
-            displaySolution(moves, currentGrid);
-            return;
-        }
-        
-        if (moves.length >= MAX_DEPTH) continue;
-        
-        // Try all possible moves
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                const newGrid = applyTileAction(currentGrid, i, j);
-                const newMoves = [...moves, {row: i, col: j, grid: newGrid}];
-                queue.push([newGrid, newMoves]);
+    let batchCount = 0;
+    let maxDepthReached = 0;
+
+    try {
+        while (queue.length > 0) {
+            // Check cancellation
+            if (solverState.shouldCancel) {
+                updateSolverUI('cancelled');
+                return;
+            }
+
+            // Check time limit
+            const elapsed = Date.now() - solverState.startTime;
+            if (elapsed > SOLVER_LIMITS.MAX_TIME_MS) {
+                updateSolverUI('failed', {
+                    message: `Time limit reached (${(elapsed / 1000).toFixed(1)}s). Explored ${solverState.statesExplored.toLocaleString()} states. Try a simpler puzzle.`
+                });
+                return;
+            }
+
+            // Check states limit
+            if (solverState.statesExplored >= SOLVER_LIMITS.MAX_STATES) {
+                updateSolverUI('failed', {
+                    message: `State limit reached (${solverState.statesExplored.toLocaleString()} states). Puzzle may be too complex or unsolvable.`
+                });
+                return;
+            }
+
+            const [currentGrid, moves] = queue.shift();
+            const gridKey = JSON.stringify(currentGrid);
+
+            if (visited.has(gridKey)) continue;
+            visited.add(gridKey);
+            solverState.statesExplored++;
+
+            // Track max depth for progress display
+            if (moves.length > maxDepthReached) {
+                maxDepthReached = moves.length;
+            }
+
+            // Update UI periodically
+            batchCount++;
+            if (batchCount >= SOLVER_LIMITS.BATCH_SIZE) {
+                batchCount = 0;
+                updateSolverUI('solving', {
+                    states: solverState.statesExplored,
+                    depth: maxDepthReached,
+                    time: Date.now() - solverState.startTime
+                });
+                await yieldToUI();
+            }
+
+            if (isSolved(currentGrid)) {
+                updateSolverUI('idle');
+                displaySolution(moves, currentGrid);
+                return;
+            }
+
+            if (moves.length >= SOLVER_LIMITS.MAX_DEPTH) continue;
+
+            // Try all possible moves
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const newGrid = applyTileAction(currentGrid, i, j);
+                    const newGridKey = JSON.stringify(newGrid);
+                    // Skip if we've already visited this state
+                    if (!visited.has(newGridKey)) {
+                        const newMoves = [...moves, {row: i, col: j, grid: newGrid}];
+                        queue.push([newGrid, newMoves]);
+                    }
+                }
             }
         }
+
+        // Queue exhausted without solution
+        updateSolverUI('failed', {
+            message: `No solution found after exploring ${solverState.statesExplored.toLocaleString()} states. Puzzle may be unsolvable from this configuration.`
+        });
+    } finally {
+        solverState.isRunning = false;
     }
-    
-    document.getElementById('solution').textContent = 'No solution found within depth limit!';
 }
 
 // Create a board state display
 function createBoardState(grid) {
     const boardState = document.createElement('div');
     boardState.className = 'board-state';
-    
+
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
             const tile = document.createElement('div');
@@ -340,7 +577,7 @@ function createBoardState(grid) {
             boardState.appendChild(tile);
         }
     }
-    
+
     return boardState;
 }
 
@@ -348,7 +585,7 @@ function createBoardState(grid) {
 function displaySolution(moves, finalGrid) {
     const solutionSteps = document.getElementById('solution-steps');
     solutionSteps.innerHTML = '';
-    
+
     if (moves.length === 0) {
         const step = document.createElement('li');
         step.className = 'solution-step';
@@ -356,52 +593,52 @@ function displaySolution(moves, finalGrid) {
         solutionSteps.appendChild(step);
         return;
     }
-    
+
     // Show initial state
     const initialStep = document.createElement('li');
     initialStep.className = 'solution-step';
     const initialContainer = document.createElement('div');
     initialContainer.className = 'step-container';
-    
+
     const initialNumber = document.createElement('span');
     initialNumber.className = 'step-number';
     initialNumber.textContent = '0.';
-    
+
     const initialText = document.createElement('span');
     initialText.className = 'step-text';
     initialText.textContent = 'Initial state';
-    
+
     const initialInfo = document.createElement('div');
     initialInfo.className = 'step-info';
     initialInfo.appendChild(initialNumber);
     initialInfo.appendChild(initialText);
-    
+
     initialContainer.appendChild(initialInfo);
     initialContainer.appendChild(createBoardState(grid));
     initialStep.appendChild(initialContainer);
     solutionSteps.appendChild(initialStep);
-    
+
     // Show each move and resulting state
     moves.forEach((move, index) => {
         const step = document.createElement('li');
         step.className = 'solution-step';
         const container = document.createElement('div');
         container.className = 'step-container';
-        
+
         const stepInfo = document.createElement('div');
         stepInfo.className = 'step-info';
-        
+
         const stepNumber = document.createElement('span');
         stepNumber.className = 'step-number';
         stepNumber.textContent = `${index + 1}.`;
-        
+
         const stepText = document.createElement('span');
         stepText.className = 'step-text';
         stepText.textContent = `Click tile at row ${move.row + 1}, column ${move.col + 1}`;
-        
+
         const stepGrid = document.createElement('div');
         stepGrid.className = 'step-grid';
-        
+
         // Create 3x3 grid
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
@@ -413,11 +650,11 @@ function displaySolution(moves, finalGrid) {
                 stepGrid.appendChild(tile);
             }
         }
-        
+
         stepInfo.appendChild(stepNumber);
         stepInfo.appendChild(stepText);
         stepInfo.appendChild(stepGrid);
-        
+
         container.appendChild(stepInfo);
         container.appendChild(createBoardState(move.grid));
         step.appendChild(container);
@@ -432,7 +669,7 @@ function savePuzzle() {
         alert('Please enter a name for the puzzle');
         return;
     }
-    
+
     const puzzleState = {
         grid: grid,
         corners: {
@@ -442,18 +679,18 @@ function savePuzzle() {
             bottomRight: document.querySelector('.corner-br').className.split(' ').find(c => colors.includes(c))
         }
     };
-    
+
     // Get existing saved puzzles
     const savedPuzzles = JSON.parse(sessionStorage.getItem('moraJaiPuzzles') || '{}');
     savedPuzzles[saveName] = puzzleState;
     sessionStorage.setItem('moraJaiPuzzles', JSON.stringify(savedPuzzles));
-    
+
     // Update the load dropdown
     updateLoadDropdown();
-    
+
     // Clear the save name input
     document.getElementById('saveName').value = '';
-    
+
     alert('Puzzle saved successfully!');
 }
 
@@ -462,21 +699,21 @@ function loadPuzzle() {
     const select = document.getElementById('loadPuzzle');
     const puzzleName = select.value;
     if (!puzzleName) return;
-    
+
     const savedPuzzles = JSON.parse(sessionStorage.getItem('moraJaiPuzzles') || '{}');
     const puzzleState = savedPuzzles[puzzleName];
-    
+
     if (puzzleState) {
         // Update grid
         grid = JSON.parse(JSON.stringify(puzzleState.grid));
         updateGridDisplay();
-        
+
         // Update corner colors
         document.querySelector('.corner-tl').className = `corner-color corner-tl ${puzzleState.corners.topLeft}`;
         document.querySelector('.corner-tr').className = `corner-color corner-tr ${puzzleState.corners.topRight}`;
         document.querySelector('.corner-bl').className = `corner-color corner-bl ${puzzleState.corners.bottomLeft}`;
         document.querySelector('.corner-br').className = `corner-color corner-br ${puzzleState.corners.bottomRight}`;
-        
+
         // Clear solution
         document.getElementById('solution-steps').innerHTML = '';
     }
@@ -486,12 +723,12 @@ function loadPuzzle() {
 function updateLoadDropdown() {
     const select = document.getElementById('loadPuzzle');
     const savedPuzzles = JSON.parse(sessionStorage.getItem('moraJaiPuzzles') || '{}');
-    
+
     // Clear existing options except the first one
     while (select.options.length > 1) {
         select.remove(1);
     }
-    
+
     // Add saved puzzles
     Object.keys(savedPuzzles).sort().forEach(name => {
         const option = document.createElement('option');
@@ -565,4 +802,4 @@ function initializeGame() {
 }
 
 // Call initializeGame instead of just initializeGrid
-initializeGame(); 
+initializeGame();
