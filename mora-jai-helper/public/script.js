@@ -131,12 +131,40 @@ function isGridSolved(testGrid, corners) {
            testGrid[2][2] === corners.bottomRight;
 }
 
+// Set random corner colors in the UI
+function setCornerColors(corners) {
+    const tlEl = document.querySelector('.corner-tl');
+    const trEl = document.querySelector('.corner-tr');
+    const blEl = document.querySelector('.corner-bl');
+    const brEl = document.querySelector('.corner-br');
+
+    // Remove all color classes and add the new ones
+    colors.forEach(c => {
+        tlEl.classList.remove(c);
+        trEl.classList.remove(c);
+        blEl.classList.remove(c);
+        brEl.classList.remove(c);
+    });
+
+    tlEl.classList.add(corners.topLeft);
+    trEl.classList.add(corners.topRight);
+    blEl.classList.add(corners.bottomLeft);
+    brEl.classList.add(corners.bottomRight);
+}
+
 // Generate a solvable random grid that is NOT already solved
 function setRandomGrid() {
-    const corners = getCornerColors();
     const maxAttempts = 20;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        // Generate random corner target colors
+        const corners = {
+            topLeft: colors[Math.floor(Math.random() * colors.length)],
+            topRight: colors[Math.floor(Math.random() * colors.length)],
+            bottomLeft: colors[Math.floor(Math.random() * colors.length)],
+            bottomRight: colors[Math.floor(Math.random() * colors.length)]
+        };
+
         // Start with a solved state - corners match their target colors
         // Fill the rest with random colors
         const solvedGrid = [
@@ -166,6 +194,7 @@ function setRandomGrid() {
         if (result.solvable && result.moves > 0) {
             // Found a solvable puzzle that requires moves!
             grid = currentGrid;
+            setCornerColors(corners);
             updateGridDisplay();
 
             // Clear any previous solution
@@ -176,8 +205,14 @@ function setRandomGrid() {
         }
     }
 
-    // Fallback: Create a simple but not-solved puzzle
-    // Start solved, then apply moves until not solved
+    // Fallback: Create a simple but not-solved puzzle with random corners
+    const corners = {
+        topLeft: colors[Math.floor(Math.random() * colors.length)],
+        topRight: colors[Math.floor(Math.random() * colors.length)],
+        bottomLeft: colors[Math.floor(Math.random() * colors.length)],
+        bottomRight: colors[Math.floor(Math.random() * colors.length)]
+    };
+
     grid = [
         [corners.topLeft, colors[Math.floor(Math.random() * colors.length)], corners.topRight],
         [colors[Math.floor(Math.random() * colors.length)], colors[Math.floor(Math.random() * colors.length)], colors[Math.floor(Math.random() * colors.length)]],
@@ -194,6 +229,7 @@ function setRandomGrid() {
         }
     }
 
+    setCornerColors(corners);
     updateGridDisplay();
     document.getElementById('solution-steps').innerHTML = '';
     const statusEl = document.getElementById('solverStatus');
