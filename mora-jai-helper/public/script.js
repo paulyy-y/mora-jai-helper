@@ -666,7 +666,7 @@ function displaySolution(moves, finalGrid) {
 function savePuzzle() {
     const saveName = document.getElementById('saveName').value.trim();
     if (!saveName) {
-        alert('Please enter a name for the puzzle');
+        showAlert('Please enter a name for the puzzle', 'warning');
         return;
     }
 
@@ -691,7 +691,7 @@ function savePuzzle() {
     // Clear the save name input
     document.getElementById('saveName').value = '';
 
-    alert('Puzzle saved successfully!');
+    showAlert('Puzzle saved successfully!', 'success');
 }
 
 // Load a saved puzzle

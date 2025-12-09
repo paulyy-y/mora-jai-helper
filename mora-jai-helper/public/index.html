@@ -353,6 +353,76 @@
             color: #495057;
             text-align: center;
         }
+        .alert-modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 0;
+            border: none;
+            width: 90%;
+            max-width: 350px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: alertSlideIn 0.2s ease-out;
+        }
+        @keyframes alertSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .alert-body {
+            padding: 24px 20px;
+            text-align: center;
+        }
+        .alert-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .alert-icon.success {
+            color: #28a745;
+        }
+        .alert-icon.warning {
+            color: #ffc107;
+        }
+        .alert-icon.error {
+            color: #dc3545;
+        }
+        .alert-icon.info {
+            color: #007bff;
+        }
+        .alert-message {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .alert-footer {
+            padding: 12px 20px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+        }
+        .alert-btn {
+            padding: 10px 32px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .alert-btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .alert-btn-primary:hover {
+            background-color: #0056b3;
+        }
         kbd {
             background-color: #f7f7f7;
             border: 1px solid #ccc;
@@ -441,6 +511,18 @@
         </div>
     </div>
 
+    <div id="alertModal" class="modal">
+        <div class="alert-modal-content">
+            <div class="alert-body">
+                <div id="alertIcon" class="alert-icon"></div>
+                <p id="alertMessage" class="alert-message"></p>
+            </div>
+            <div class="alert-footer">
+                <button class="alert-btn alert-btn-primary" onclick="hideAlert()">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function showInfo() {
             document.getElementById('infoModal').style.display = 'block';
@@ -450,13 +532,55 @@
             document.getElementById('infoModal').style.display = 'none';
         }
 
+        // Show custom alert modal
+        function showAlert(message, type = 'info') {
+            const modal = document.getElementById('alertModal');
+            const icon = document.getElementById('alertIcon');
+            const msg = document.getElementById('alertMessage');
+
+            // Set icon based on type
+            const icons = {
+                success: '✓',
+                warning: '⚠',
+                error: '✕',
+                info: 'ℹ'
+            };
+
+            icon.textContent = icons[type] || icons.info;
+            icon.className = 'alert-icon ' + type;
+            msg.textContent = message;
+            modal.style.display = 'block';
+
+            // Focus the OK button for keyboard accessibility
+            modal.querySelector('.alert-btn').focus();
+        }
+
+        function hideAlert() {
+            document.getElementById('alertModal').style.display = 'none';
+        }
+
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('infoModal');
-            if (event.target == modal) {
-                modal.style.display = 'none';
+            const infoModal = document.getElementById('infoModal');
+            const alertModal = document.getElementById('alertModal');
+            if (event.target == infoModal) {
+                infoModal.style.display = 'none';
+            }
+            if (event.target == alertModal) {
+                alertModal.style.display = 'none';
             }
         }
+
+        // Close alert modal on Escape key
+        window.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                hideAlert();
+                hideInfo();
+            }
+            if (event.key === 'Enter' && document.getElementById('alertModal').style.display === 'block') {
+                hideAlert();
+            }
+        });
     </script>
     <script src="script.js"></script>
 </body>
