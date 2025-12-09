@@ -61,6 +61,7 @@ function cycleTileColor(row, col) {
     const nextIndex = (currentIndex + 1) % colors.length;
     grid[row][col] = colors[nextIndex];
     updateGridDisplay();
+    solvePuzzle(); // Auto-solve on change
 }
 
 // Cycle through colors when clicking a corner
@@ -73,6 +74,7 @@ function cycleCornerColor(corner) {
     // Remove current color class and add new one
     cornerElement.classList.remove(currentColor);
     cornerElement.classList.add(colors[nextIndex]);
+    solvePuzzle(); // Auto-solve on change
 }
 
 // Update the visual display of the grid
@@ -196,11 +198,7 @@ function setRandomGrid() {
             grid = currentGrid;
             setCornerColors(corners);
             updateGridDisplay();
-
-            // Clear any previous solution
-            document.getElementById('solution-steps').innerHTML = '';
-            const statusEl = document.getElementById('solverStatus');
-            if (statusEl) statusEl.style.display = 'none';
+            solvePuzzle(); // Auto-solve after generating
             return;
         }
     }
@@ -231,9 +229,7 @@ function setRandomGrid() {
 
     setCornerColors(corners);
     updateGridDisplay();
-    document.getElementById('solution-steps').innerHTML = '';
-    const statusEl = document.getElementById('solverStatus');
-    if (statusEl) statusEl.style.display = 'none';
+    solvePuzzle(); // Auto-solve after generating
 }
 
 // Get the corner colors from the UI
@@ -750,8 +746,8 @@ function loadPuzzle() {
         document.querySelector('.corner-bl').className = `corner-color corner-bl ${puzzleState.corners.bottomLeft}`;
         document.querySelector('.corner-br').className = `corner-color corner-br ${puzzleState.corners.bottomRight}`;
 
-        // Clear solution
-        document.getElementById('solution-steps').innerHTML = '';
+        // Auto-solve the loaded puzzle
+        solvePuzzle();
     }
 }
 
@@ -802,6 +798,7 @@ function handleGlobalKeydown(e) {
         grid[row][col] = colorKeyMap[key];
         updateGridDisplay();
         hoveredTile.focus();
+        solvePuzzle(); // Auto-solve on change
         return;
     }
     const active = document.activeElement;
@@ -811,18 +808,21 @@ function handleGlobalKeydown(e) {
         grid[row][col] = colorKeyMap[key];
         updateGridDisplay();
         active.focus();
+        solvePuzzle(); // Auto-solve on change
         return;
     }
     if (hoveredCorner) {
         colors.forEach(c => hoveredCorner.classList.remove(c));
         hoveredCorner.classList.add(colorKeyMap[key]);
         hoveredCorner.focus();
+        solvePuzzle(); // Auto-solve on change
         return;
     }
     if (active && active.classList.contains('corner-color')) {
         colors.forEach(c => active.classList.remove(c));
         active.classList.add(colorKeyMap[key]);
         active.focus();
+        solvePuzzle(); // Auto-solve on change
         return;
     }
 }
