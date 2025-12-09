@@ -650,18 +650,29 @@ function displaySolution(moves, finalGrid) {
     const initialContainer = document.createElement('div');
     initialContainer.className = 'step-container';
 
-    const initialNumber = document.createElement('span');
-    initialNumber.className = 'step-number';
-    initialNumber.textContent = '0.';
+    const initialInfo = document.createElement("div");
+    initialInfo.className = "step-info";
 
-    const initialText = document.createElement('span');
-    initialText.className = 'step-text';
-    initialText.textContent = 'Initial state';
+    const initialNumber = document.createElement("span");
+    initialNumber.className = "step-number";
+    initialNumber.textContent = "0.";
 
-    const initialInfo = document.createElement('div');
-    initialInfo.className = 'step-info';
+    const initialText = document.createElement("span");
+    initialText.className = "step-text";
+    initialText.textContent = "Initial state";
+
+    // Add empty step-grid placeholder to align with other steps
+    const initialGrid = document.createElement("div");
+    initialGrid.className = "step-grid";
+    for (let i = 0; i < 9; i++) {
+      const tile = document.createElement("div");
+      tile.className = "step-tile";
+      initialGrid.appendChild(tile);
+    }
+
     initialInfo.appendChild(initialNumber);
     initialInfo.appendChild(initialText);
+    initialInfo.appendChild(initialGrid);
 
     initialContainer.appendChild(initialInfo);
     initialContainer.appendChild(createBoardState(grid));
@@ -847,12 +858,14 @@ function handleGlobalKeydown(e) {
 
 // Initialize the game
 function initializeGame() {
-    initializeGrid();
-    updateLoadDropdown();
-    enableTileHoverTracking();
-    enableCornerHoverTracking();
-    window.removeEventListener('keydown', handleGlobalKeydown);
-    window.addEventListener('keydown', handleGlobalKeydown);
+  initializeGrid();
+  updateLoadDropdown();
+  enableTileHoverTracking();
+  enableCornerHoverTracking();
+  window.removeEventListener("keydown", handleGlobalKeydown);
+  window.addEventListener("keydown", handleGlobalKeydown);
+  // Auto-solve on initial page load
+  solvePuzzle();
 }
 
 // Call initializeGame instead of just initializeGrid
