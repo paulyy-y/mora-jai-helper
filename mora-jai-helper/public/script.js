@@ -26,6 +26,7 @@ let hoveredCorner = null;
 let solverState = {
     isRunning: false,
     shouldCancel: false,
+    restartAfterCancel: false,
     statesExplored: 0,
     startTime: 0
 };
@@ -486,6 +487,7 @@ function updateSolverUI(status, progress = null) {
 function cancelSolve() {
     if (solverState.isRunning) {
         solverState.shouldCancel = true;
+        solverState.restartAfterCancel = false; // Manual cancel, don't restart
     }
 }
 
@@ -496,13 +498,18 @@ function yieldToUI() {
 
 // Async breadth-first search solver with intelligent termination
 async function solvePuzzle() {
-    // Prevent multiple solves at once
-    if (solverState.isRunning) return;
+    // If already running, cancel and queue restart
+    if (solverState.isRunning) {
+        solverState.shouldCancel = true;
+        solverState.restartAfterCancel = true;
+        return;
+    }
 
     // Initialize solver state
     solverState = {
         isRunning: true,
         shouldCancel: false,
+        restartAfterCancel: false,
         statesExplored: 0,
         startTime: Date.now()
     };
@@ -520,7 +527,10 @@ async function solvePuzzle() {
         while (queue.length > 0) {
             // Check cancellation
             if (solverState.shouldCancel) {
-                updateSolverUI('cancelled');
+                // Don't show cancelled UI if we're restarting
+                if (!solverState.restartAfterCancel) {
+                    updateSolverUI('cancelled');
+                }
                 return;
             }
 
@@ -592,7 +602,15 @@ async function solvePuzzle() {
             message: `No solution found after exploring ${solverState.statesExplored.toLocaleString()} states. Puzzle may be unsolvable from this configuration.`
         });
     } finally {
+        const shouldRestart = solverState.restartAfterCancel;
         solverState.isRunning = false;
+        solverState.restartAfterCancel = false;
+
+        // If layout changed during solve, restart with new layout
+        if (shouldRestart) {
+            // Use setTimeout to avoid stack overflow from recursive calls
+            setTimeout(() => solvePuzzle(), 0);
+        }
     }
 }
 
