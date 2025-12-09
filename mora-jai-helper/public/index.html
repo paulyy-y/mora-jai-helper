@@ -36,7 +36,7 @@
             font-weight: bold;
             color: white;
             text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
-            transition: transform 0.2s;
+            transition: transform 0.2s, background-color 0.3s ease;
         }
         .tile:hover {
             transform: scale(1.05);
@@ -46,7 +46,7 @@
             height: 40px;
             border: 2px solid #333;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.2s, background-color 0.3s ease;
             position: absolute;
             z-index: 2;
         }
@@ -83,6 +83,9 @@
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 600px;
+            display: flex;
+            flex-direction: column;
         }
         .solution h2 {
             margin-top: 0;
@@ -92,6 +95,10 @@
             list-style-type: none;
             padding: 0;
             margin: 0;
+            transition: opacity 0.3s ease;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
         }
         .solution-step {
             padding: 10px;
@@ -102,6 +109,8 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            animation: fadeSlideIn 0.4s ease forwards;
+            opacity: 0;
         }
         .solution-step:hover {
             background-color: #e9ecef;
@@ -343,20 +352,41 @@
         }
         .cancel-btn {
             background-color: #dc3545;
-            display: none;
+            visibility: hidden;
+            opacity: 0;
+            max-width: 0;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s, max-width 0.2s ease, padding 0.2s ease, margin 0.2s ease;
+        }
+        .cancel-btn.visible {
+            visibility: visible;
+            opacity: 1;
+            max-width: 200px;
+            padding: 8px 16px;
+            margin: 0;
         }
         .cancel-btn:hover {
             background-color: #c82333;
         }
         .solver-status {
-            display: none;
             margin-top: 10px;
-            padding: 10px;
+            padding: 0;
             background-color: #e9ecef;
             border-radius: 4px;
             font-size: 14px;
             color: #495057;
             text-align: center;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: opacity 0.2s ease, max-height 0.2s ease, padding 0.2s ease;
+        }
+        .solver-status.visible {
+            opacity: 1;
+            max-height: 150px;
+            padding: 10px;
         }
         .alert-modal-content {
             background-color: #fefefe;
@@ -374,6 +404,16 @@
             from {
                 opacity: 0;
                 transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
             }
             to {
                 opacity: 1;
@@ -440,6 +480,11 @@
             line-height: 1;
             padding: 2px 4px;
             white-space: nowrap;
+        }
+        @media (max-width: 768px) {
+            .solution {
+                height: 400px;
+            }
         }
     </style>
 </head>

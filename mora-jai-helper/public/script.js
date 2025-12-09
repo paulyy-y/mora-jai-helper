@@ -456,30 +456,30 @@ function updateSolverUI(status, progress = null) {
     if (status === 'solving') {
         solveBtn.disabled = true;
         solveBtn.textContent = 'Solving...';
-        cancelBtn.style.display = 'inline-block';
+        cancelBtn.classList.add('visible');
         if (progress) {
             statusEl.textContent = `Exploring: ${progress.states.toLocaleString()} states | Depth: ${progress.depth} | Time: ${(progress.time / 1000).toFixed(1)}s`;
-            statusEl.style.display = 'block';
+            statusEl.classList.add('visible');
         }
     } else if (status === 'idle') {
         solveBtn.disabled = false;
         solveBtn.textContent = 'Solve Puzzle';
-        cancelBtn.style.display = 'none';
-        statusEl.style.display = 'none';
+        cancelBtn.classList.remove('visible');
+        statusEl.classList.remove('visible');
     } else if (status === 'cancelled') {
         solveBtn.disabled = false;
         solveBtn.textContent = 'Solve Puzzle';
-        cancelBtn.style.display = 'none';
+        cancelBtn.classList.remove('visible');
         statusEl.textContent = 'Cancelled by user';
-        statusEl.style.display = 'block';
+        statusEl.classList.add('visible');
     } else if (status === 'failed') {
         solveBtn.disabled = false;
         solveBtn.textContent = 'Solve Puzzle';
-        cancelBtn.style.display = 'none';
+        cancelBtn.classList.remove('visible');
         if (progress) {
             statusEl.textContent = progress.message;
         }
-        statusEl.style.display = 'block';
+        statusEl.classList.add('visible');
     }
 }
 
@@ -514,8 +514,13 @@ async function solvePuzzle() {
         startTime: Date.now()
     };
 
-    // Clear previous solution
-    document.getElementById('solution-steps').innerHTML = '';
+    // Fade out and clear previous solution
+    const solutionSteps = document.getElementById('solution-steps');
+    solutionSteps.style.opacity = '0';
+    setTimeout(() => {
+        solutionSteps.innerHTML = '';
+    }, 300);
+
     updateSolverUI('solving', { states: 0, depth: 0, time: 0 });
 
     const queue = [[JSON.parse(JSON.stringify(grid)), []]];
@@ -634,93 +639,115 @@ function createBoardState(grid) {
 // Display the solution
 function displaySolution(moves, finalGrid) {
     const solutionSteps = document.getElementById('solution-steps');
-    solutionSteps.innerHTML = '';
 
-    if (moves.length === 0) {
-        const step = document.createElement('li');
-        step.className = 'solution-step';
-        step.textContent = 'Puzzle is already solved!';
-        solutionSteps.appendChild(step);
-        return;
-    }
+    // Fade out existing content
+    solutionSteps.style.opacity = '0';
 
-    // Show initial state
-    const initialStep = document.createElement('li');
-    initialStep.className = 'solution-step';
-    const initialContainer = document.createElement('div');
-    initialContainer.className = 'step-container';
+    // Wait for fade out, then update content
+    setTimeout(() => {
+        solutionSteps.innerHTML = '';
 
-    const initialInfo = document.createElement("div");
-    initialInfo.className = "step-info";
-
-    const initialNumber = document.createElement("span");
-    initialNumber.className = "step-number";
-    initialNumber.textContent = "0.";
-
-    const initialText = document.createElement("span");
-    initialText.className = "step-text";
-    initialText.textContent = "Initial state";
-
-    // Add empty step-grid placeholder to align with other steps
-    const initialGrid = document.createElement("div");
-    initialGrid.className = "step-grid";
-    for (let i = 0; i < 9; i++) {
-      const tile = document.createElement("div");
-      tile.className = "step-tile";
-      initialGrid.appendChild(tile);
-    }
-
-    initialInfo.appendChild(initialNumber);
-    initialInfo.appendChild(initialText);
-    initialInfo.appendChild(initialGrid);
-
-    initialContainer.appendChild(initialInfo);
-    initialContainer.appendChild(createBoardState(grid));
-    initialStep.appendChild(initialContainer);
-    solutionSteps.appendChild(initialStep);
-
-    // Show each move and resulting state
-    moves.forEach((move, index) => {
-        const step = document.createElement('li');
-        step.className = 'solution-step';
-        const container = document.createElement('div');
-        container.className = 'step-container';
-
-        const stepInfo = document.createElement('div');
-        stepInfo.className = 'step-info';
-
-        const stepNumber = document.createElement('span');
-        stepNumber.className = 'step-number';
-        stepNumber.textContent = `${index + 1}.`;
-
-        const stepText = document.createElement('span');
-        stepText.className = 'step-text';
-        stepText.textContent = `Click tile at row ${move.row + 1}, column ${move.col + 1}`;
-
-        const stepGrid = document.createElement('div');
-        stepGrid.className = 'step-grid';
-
-        // Create 3x3 grid
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                const tile = document.createElement('div');
-                tile.className = 'step-tile';
-                if (i === move.row && j === move.col) {
-                    tile.classList.add('target');
-                }
-                stepGrid.appendChild(tile);
-            }
+        if (moves.length === 0) {
+            const step = document.createElement('li');
+            step.className = 'solution-step';
+            step.textContent = 'Puzzle is already solved!';
+            solutionSteps.appendChild(step);
+            // Fade back in
+            setTimeout(() => {
+                solutionSteps.style.opacity = '1';
+            }, 50);
+            return;
         }
 
-        stepInfo.appendChild(stepNumber);
-        stepInfo.appendChild(stepText);
-        stepInfo.appendChild(stepGrid);
+        // Show initial state
+        const initialStep = document.createElement('li');
+        initialStep.className = 'solution-step';
+        // No delay for first item
+        initialStep.style.animationDelay = '0s';
 
-        container.appendChild(stepInfo);
-        container.appendChild(createBoardState(move.grid));
-        step.appendChild(container);
-        solutionSteps.appendChild(step);
-    });
+        const initialContainer = document.createElement('div');
+        initialContainer.className = 'step-container';
+
+        const initialInfo = document.createElement("div");
+        initialInfo.className = "step-info";
+
+        const initialNumber = document.createElement("span");
+        initialNumber.className = "step-number";
+        initialNumber.textContent = "0.";
+
+        const initialText = document.createElement("span");
+        initialText.className = "step-text";
+        initialText.textContent = "Initial state";
+
+        // Add empty step-grid placeholder to align with other steps
+        const initialGrid = document.createElement("div");
+        initialGrid.className = "step-grid";
+        for (let i = 0; i < 9; i++) {
+          const tile = document.createElement("div");
+          tile.className = "step-tile";
+          initialGrid.appendChild(tile);
+        }
+
+        initialInfo.appendChild(initialNumber);
+        initialInfo.appendChild(initialText);
+        initialInfo.appendChild(initialGrid);
+
+        initialContainer.appendChild(initialInfo);
+        initialContainer.appendChild(createBoardState(grid));
+        initialStep.appendChild(initialContainer);
+        solutionSteps.appendChild(initialStep);
+
+        // Show each move and resulting state
+        moves.forEach((move, index) => {
+            const step = document.createElement('li');
+            step.className = 'solution-step';
+            // Add staggered animation delay
+            step.style.animationDelay = `${(index + 1) * 0.05}s`;
+
+            const container = document.createElement('div');
+            container.className = 'step-container';
+
+            const stepInfo = document.createElement('div');
+            stepInfo.className = 'step-info';
+
+            const stepNumber = document.createElement('span');
+            stepNumber.className = 'step-number';
+            stepNumber.textContent = `${index + 1}.`;
+
+            const stepText = document.createElement('span');
+            stepText.className = 'step-text';
+            stepText.textContent = `Click tile at row ${move.row + 1}, column ${move.col + 1}`;
+
+            const stepGrid = document.createElement('div');
+            stepGrid.className = 'step-grid';
+
+            // Create 3x3 grid
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'step-tile';
+                    if (i === move.row && j === move.col) {
+                        tile.classList.add('target');
+                    }
+                    stepGrid.appendChild(tile);
+                }
+            }
+
+            stepInfo.appendChild(stepNumber);
+            stepInfo.appendChild(stepText);
+            stepInfo.appendChild(stepGrid);
+
+            container.appendChild(stepInfo);
+            container.appendChild(createBoardState(move.grid));
+            step.appendChild(container);
+            solutionSteps.appendChild(step);
+        });
+
+        // Fade back in after populating
+        setTimeout(() => {
+            solutionSteps.style.opacity = '1';
+        }, 50);
+    }, 300); // Wait for fade out transition
 }
 
 // Save current puzzle state
