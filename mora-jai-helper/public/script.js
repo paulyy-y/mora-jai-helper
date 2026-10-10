@@ -17,6 +17,15 @@ const colorKeyMap = {
     u: 'purple', // 'u' for purple to avoid conflict with pink
     w: 'white'
 };
+const colorLetter = Object.fromEntries(Object.entries(colorKeyMap).map(([k, c]) => [c, k.toUpperCase()]));
+
+// Corner targets: the colour each corner tile must end up as
+let corners = { tl: 'orange', tr: 'orange', bl: 'orange', br: 'orange' };
+const cornerNames = { tl: 'Top-left', tr: 'Top-right', bl: 'Bottom-left', br: 'Bottom-right' };
+
+const STORAGE_KEY = 'moraJaiPuzzles';
+const THEME_KEY = 'moraJai.theme';
+const $ = id => document.getElementById(id);
 
 // Track hovered tile or corner
 let hoveredTile = null;
@@ -39,21 +48,29 @@ const SOLVER_LIMITS = {
     BATCH_SIZE: 500 // States to process before yielding to UI
 };
 
-// Initialize the grid
+// Initialize the grid: nine tile buttons placed inside the ring of corner targets
 function initializeGrid() {
-    const gridElement = document.getElementById('grid');
-    gridElement.innerHTML = '';
+    const board = $('board');
+    board.querySelectorAll('.tile').forEach(t => t.remove());
+    // Tiles go between the top and bottom corners, so Tab follows the board top to bottom
+    const bottomLeft = board.querySelector('[data-corner="bl"]');
 
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
-            const tile = document.createElement('div');
-            tile.className = `tile ${grid[i][j]}`;
+            const tile = document.createElement('button');
+            tile.type = 'button';
+            tile.className = 'tile';
             tile.dataset.row = i;
             tile.dataset.col = j;
+            tile.style.gridArea = `${i + 2} / ${j + 2}`;
             tile.onclick = () => cycleTileColor(i, j);
-            gridElement.appendChild(tile);
+            board.insertBefore(tile, bottomLeft);
         }
     }
+    board.querySelectorAll('.corner').forEach(c => {
+        c.onclick = () => cycleCornerColor(c.dataset.corner);
+    });
+    updateGridDisplay();
 }
 
 // Cycle through colors when clicking a tile
@@ -61,30 +78,38 @@ function cycleTileColor(row, col) {
     const currentIndex = colors.indexOf(grid[row][col]);
     const nextIndex = (currentIndex + 1) % colors.length;
     grid[row][col] = colors[nextIndex];
-    updateGridDisplay();
-    solvePuzzle(); // Auto-solve on change
+    boardChanged();
 }
 
 // Cycle through colors when clicking a corner
 function cycleCornerColor(corner) {
-    const cornerElement = document.querySelector(`.corner-${corner}`);
-    const currentColor = cornerElement.className.split(' ').find(c => colors.includes(c));
-    const currentIndex = colors.indexOf(currentColor);
-    const nextIndex = (currentIndex + 1) % colors.length;
+    const nextIndex = (colors.indexOf(corners[corner]) + 1) % colors.length;
+    corners[corner] = colors[nextIndex];
+    boardChanged();
+}
 
-    // Remove current color class and add new one
-    cornerElement.classList.remove(currentColor);
-    cornerElement.classList.add(colors[nextIndex]);
+// Any edit by hand: redraw, note the puzzle has changed, and solve again
+function boardChanged() {
+    updateGridDisplay();
+    setContext(currentName ? `${currentName}, edited` : 'Edited puzzle');
     solvePuzzle(); // Auto-solve on change
 }
 
-// Update the visual display of the grid
+// Update the visual display of the grid and the corner targets
 function updateGridDisplay() {
-    const tiles = document.querySelectorAll('.tile');
-    tiles.forEach(tile => {
+    document.querySelectorAll('.tile').forEach(tile => {
         const row = parseInt(tile.dataset.row);
         const col = parseInt(tile.dataset.col);
-        tile.className = `tile ${grid[row][col]}`;
+        const color = grid[row][col];
+        tile.className = `tile piece-${color}`;
+        tile.textContent = colorLetter[color];
+        tile.setAttribute('aria-label', `Row ${row + 1}, column ${col + 1}: ${color}`);
+    });
+    document.querySelectorAll('.corner').forEach(el => {
+        const color = corners[el.dataset.corner];
+        el.className = `corner piece-${color}`;
+        el.textContent = colorLetter[color];
+        el.setAttribute('aria-label', `${cornerNames[el.dataset.corner]} target: ${color}`);
     });
     enableTileHoverTracking();
 }
@@ -134,25 +159,9 @@ function isGridSolved(testGrid, corners) {
            testGrid[2][2] === corners.bottomRight;
 }
 
-// Set random corner colors in the UI
-function setCornerColors(corners) {
-    const tlEl = document.querySelector('.corner-tl');
-    const trEl = document.querySelector('.corner-tr');
-    const blEl = document.querySelector('.corner-bl');
-    const brEl = document.querySelector('.corner-br');
-
-    // Remove all color classes and add the new ones
-    colors.forEach(c => {
-        tlEl.classList.remove(c);
-        trEl.classList.remove(c);
-        blEl.classList.remove(c);
-        brEl.classList.remove(c);
-    });
-
-    tlEl.classList.add(corners.topLeft);
-    trEl.classList.add(corners.topRight);
-    blEl.classList.add(corners.bottomLeft);
-    brEl.classList.add(corners.bottomRight);
+// Set the corner targets (drawn by updateGridDisplay)
+function setCornerColors(target) {
+    corners = { tl: target.topLeft, tr: target.topRight, bl: target.bottomLeft, br: target.bottomRight };
 }
 
 // Generate a solvable random grid that is NOT already solved
@@ -233,14 +242,9 @@ function setRandomGrid() {
     solvePuzzle(); // Auto-solve after generating
 }
 
-// Get the corner colors from the UI
+// Get the corner targets
 function getCornerColors() {
-    return {
-        topLeft: document.querySelector('.corner-tl').className.split(' ').find(c => colors.includes(c)),
-        topRight: document.querySelector('.corner-tr').className.split(' ').find(c => colors.includes(c)),
-        bottomLeft: document.querySelector('.corner-bl').className.split(' ').find(c => colors.includes(c)),
-        bottomRight: document.querySelector('.corner-br').className.split(' ').find(c => colors.includes(c))
-    };
+    return { topLeft: corners.tl, topRight: corners.tr, bottomLeft: corners.bl, bottomRight: corners.br };
 }
 
 // Check if the puzzle is solved
@@ -447,39 +451,95 @@ function applyTileAction(currentGrid, row, col) {
     return newGrid;
 }
 
+// Show one of a button's stacked labels (see .lbls in index.html)
+function setButtonLabel(btn, state) {
+    btn.querySelectorAll('.lbls > span').forEach(s => s.classList.toggle('on', s.dataset.s === state));
+}
+
+// Show a label for about 3 seconds, then go back to the idle one
+const labelTimers = new WeakMap();
+function flashButtonLabel(btn, state, ms = 3000) {
+    clearTimeout(labelTimers.get(btn));
+    setButtonLabel(btn, state);
+    labelTimers.set(btn, setTimeout(() => setButtonLabel(btn, 'idle'), ms));
+}
+
+function announce(text) {
+    $('announce').textContent = text;
+}
+
+function plural(n, one, many = one + 's') {
+    return `${n.toLocaleString()} ${n === 1 ? one : many}`;
+}
+
+// Status bar: what the solver is doing or last did
+function setSolverStatus(state, states = null, ms = null) {
+    $('sbState').textContent = state;
+    $('sbStates').textContent = states == null ? '' : `${plural(states, 'position')} checked`;
+    $('sbTime').textContent = ms == null ? '' : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`;
+}
+
+// Replace what the solution pane shows with a message (the table stays mounted, hidden)
+function showInSolutionPane(node) {
+    $('solMsg').replaceChildren(node);
+    $('stepsTable').hidden = true;
+    $('stepsTable').removeAttribute('aria-busy');
+    $('moveCount').textContent = '';
+}
+
+function showNotice(kind, icon, word, text) {
+    const box = document.createElement('div');
+    box.className = `notice ${kind}`;
+    const strong = document.createElement('strong');
+    strong.className = 'word';
+    strong.innerHTML = `<svg class="i mark" aria-hidden="true"><use href="#i-${icon}"/></svg> `;
+    strong.append(word);
+    const p = document.createElement('p');
+    p.textContent = text;
+    box.append(strong, p);
+    showInSolutionPane(box);
+}
+
+// Solving takes over the pane only after a second, so quick solves don't flash
+let progressTimer = null;
+let progressInPane = false;
+function showProgress(progress) {
+    const p = document.createElement('p');
+    p.className = 'msg';
+    p.textContent = `Solving … checked ${progress.states.toLocaleString()} of at most ${SOLVER_LIMITS.MAX_STATES.toLocaleString()} positions.`;
+    showInSolutionPane(p);
+}
+
 // Update UI to show solving status
 function updateSolverUI(status, progress = null) {
-    const solveBtn = document.getElementById('solveBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const statusEl = document.getElementById('solverStatus');
+    const solveBtn = $('solveBtn');
+    const stopBtn = $('stopBtn');
+    const running = status === 'solving';
+
+    setButtonLabel(solveBtn, running ? 'busy' : 'idle');
+    if (running) solveBtn.setAttribute('aria-disabled', 'true');
+    else solveBtn.removeAttribute('aria-disabled');
+    // Stop disables itself when the solver ends; keep keyboard focus on the toolbar
+    if (!running && document.activeElement === stopBtn) solveBtn.focus();
+    stopBtn.disabled = !running;
+    stopBtn.title = running ? 'Stop the solver' : "The solver isn't running";
+    if (!running) {
+        clearTimeout(progressTimer);
+        progressInPane = false;
+    }
 
     if (status === 'solving') {
-        solveBtn.disabled = true;
-        solveBtn.textContent = 'Solving...';
-        cancelBtn.classList.add('visible');
-        if (progress) {
-            statusEl.textContent = `Exploring: ${progress.states.toLocaleString()} states | Depth: ${progress.depth} | Time: ${(progress.time / 1000).toFixed(1)}s`;
-            statusEl.classList.add('visible');
-        }
-    } else if (status === 'idle') {
-        solveBtn.disabled = false;
-        solveBtn.textContent = 'Solve Puzzle';
-        cancelBtn.classList.remove('visible');
-        statusEl.classList.remove('visible');
+        $('stepsTable').setAttribute('aria-busy', 'true');
+        setSolverStatus('Solving', progress.states, progress.time);
+        if (progressInPane) showProgress(progress);
     } else if (status === 'cancelled') {
-        solveBtn.disabled = false;
-        solveBtn.textContent = 'Solve Puzzle';
-        cancelBtn.classList.remove('visible');
-        statusEl.textContent = 'Cancelled by user';
-        statusEl.classList.add('visible');
+        setSolverStatus('Stopped', solverState.statesExplored, Date.now() - solverState.startTime);
+        showNotice('warn', 'clock', 'Stopped', 'The solver stopped before it found an answer. Press Solve to start again.');
+        announce('Solver stopped.');
     } else if (status === 'failed') {
-        solveBtn.disabled = false;
-        solveBtn.textContent = 'Solve Puzzle';
-        cancelBtn.classList.remove('visible');
-        if (progress) {
-            statusEl.textContent = progress.message;
-        }
-        statusEl.classList.add('visible');
+        setSolverStatus('No answer', solverState.statesExplored, Date.now() - solverState.startTime);
+        showNotice(progress.kind, progress.icon, progress.word, progress.message);
+        announce(`${progress.word}. ${progress.message}`);
     }
 }
 
@@ -514,12 +574,14 @@ async function solvePuzzle() {
         startTime: Date.now()
     };
 
-    // Fade out and clear previous solution
-    const solutionSteps = document.getElementById('solution-steps');
-    solutionSteps.style.opacity = '0';
-    setTimeout(() => {
-        solutionSteps.innerHTML = '';
-    }, 300);
+    // The old answer stays (marked busy) until the new one is ready; after a second, progress replaces it
+    clearTimeout(progressTimer);
+    progressInPane = false;
+    progressTimer = setTimeout(() => {
+        if (!solverState.isRunning) return;
+        progressInPane = true;
+        showProgress({ states: solverState.statesExplored });
+    }, 1000);
 
     updateSolverUI('solving', { states: 0, depth: 0, time: 0 });
 
@@ -543,7 +605,8 @@ async function solvePuzzle() {
             const elapsed = Date.now() - solverState.startTime;
             if (elapsed > SOLVER_LIMITS.MAX_TIME_MS) {
                 updateSolverUI('failed', {
-                    message: `Time limit reached (${(elapsed / 1000).toFixed(1)}s). Explored ${solverState.statesExplored.toLocaleString()} states. Try a simpler puzzle.`
+                    kind: 'warn', icon: 'clock', word: `No answer within ${SOLVER_LIMITS.MAX_TIME_MS / 1000} seconds`,
+                    message: `Checked ${plural(solverState.statesExplored, 'position')}. The puzzle may need more than ${SOLVER_LIMITS.MAX_DEPTH} presses; check the colours against the game.`
                 });
                 return;
             }
@@ -551,7 +614,8 @@ async function solvePuzzle() {
             // Check states limit
             if (solverState.statesExplored >= SOLVER_LIMITS.MAX_STATES) {
                 updateSolverUI('failed', {
-                    message: `State limit reached (${solverState.statesExplored.toLocaleString()} states). Puzzle may be too complex or unsolvable.`
+                    kind: 'warn', icon: 'clock', word: `No answer in ${SOLVER_LIMITS.MAX_STATES.toLocaleString()} positions`,
+                    message: `The solver stops there. The puzzle may need more than ${SOLVER_LIMITS.MAX_DEPTH} presses; check the colours against the game.`
                 });
                 return;
             }
@@ -604,7 +668,8 @@ async function solvePuzzle() {
 
         // Queue exhausted without solution
         updateSolverUI('failed', {
-            message: `No solution found after exploring ${solverState.statesExplored.toLocaleString()} states. Puzzle may be unsolvable from this configuration.`
+            kind: 'bad', icon: 'x', word: 'No answer',
+            message: `Checked every position reachable in ${SOLVER_LIMITS.MAX_DEPTH} presses (${plural(solverState.statesExplored, 'position')}); none opens the box. Check the tile and corner colours against the game.`
         });
     } finally {
         const shouldRestart = solverState.restartAfterCancel;
@@ -619,16 +684,18 @@ async function solvePuzzle() {
     }
 }
 
-// Create a board state display
+// A small 3x3 picture of a board, with each tile's letter; the row's text says the same in words
 function createBoardState(grid) {
     const boardState = document.createElement('div');
-    boardState.className = 'board-state';
+    boardState.className = 'mini';
+    boardState.setAttribute('role', 'img');
+    boardState.setAttribute('aria-label', grid.map((row, i) => `Row ${i + 1}: ${row.join(', ')}`).join('; '));
 
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
-            const tile = document.createElement('div');
-            tile.className = `board-tile ${grid[i][j]}`;
-            tile.textContent = grid[i][j].charAt(0).toUpperCase();
+            const tile = document.createElement('span');
+            tile.className = `piece-${grid[i][j]}`;
+            tile.textContent = colorLetter[grid[i][j]];
             boardState.appendChild(tile);
         }
     }
@@ -636,194 +703,259 @@ function createBoardState(grid) {
     return boardState;
 }
 
-// Display the solution
-function displaySolution(moves, finalGrid) {
-    const solutionSteps = document.getElementById('solution-steps');
-
-    // Fade out existing content
-    solutionSteps.style.opacity = '0';
-
-    // Wait for fade out, then update content
-    setTimeout(() => {
-        solutionSteps.innerHTML = '';
-
-        if (moves.length === 0) {
-            const step = document.createElement('li');
-            step.className = 'solution-step';
-            step.textContent = 'Puzzle is already solved!';
-            solutionSteps.appendChild(step);
-            // Fade back in
-            setTimeout(() => {
-                solutionSteps.style.opacity = '1';
-            }, 50);
-            return;
-        }
-
-        // Show initial state
-        const initialStep = document.createElement('li');
-        initialStep.className = 'solution-step';
-        // No delay for first item
-        initialStep.style.animationDelay = '0s';
-
-        const initialContainer = document.createElement('div');
-        initialContainer.className = 'step-container';
-
-        const initialInfo = document.createElement("div");
-        initialInfo.className = "step-info";
-
-        const initialNumber = document.createElement("span");
-        initialNumber.className = "step-number";
-        initialNumber.textContent = "0.";
-
-        const initialText = document.createElement("span");
-        initialText.className = "step-text";
-        initialText.textContent = "Initial state";
-
-        // Add empty step-grid placeholder to align with other steps
-        const initialGrid = document.createElement("div");
-        initialGrid.className = "step-grid";
-        for (let i = 0; i < 9; i++) {
-          const tile = document.createElement("div");
-          tile.className = "step-tile";
-          initialGrid.appendChild(tile);
-        }
-
-        initialInfo.appendChild(initialNumber);
-        initialInfo.appendChild(initialText);
-        initialInfo.appendChild(initialGrid);
-
-        initialContainer.appendChild(initialInfo);
-        initialContainer.appendChild(createBoardState(grid));
-        initialStep.appendChild(initialContainer);
-        solutionSteps.appendChild(initialStep);
-
-        // Show each move and resulting state
-        moves.forEach((move, index) => {
-            const step = document.createElement('li');
-            step.className = 'solution-step';
-            // Add staggered animation delay
-            step.style.animationDelay = `${(index + 1) * 0.05}s`;
-
-            const container = document.createElement('div');
-            container.className = 'step-container';
-
-            const stepInfo = document.createElement('div');
-            stepInfo.className = 'step-info';
-
-            const stepNumber = document.createElement('span');
-            stepNumber.className = 'step-number';
-            stepNumber.textContent = `${index + 1}.`;
-
-            const stepText = document.createElement('span');
-            stepText.className = 'step-text';
-            stepText.textContent = `Click tile at row ${move.row + 1}, column ${move.col + 1}`;
-
-            const stepGrid = document.createElement('div');
-            stepGrid.className = 'step-grid';
-
-            // Create 3x3 grid
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 3; j++) {
-                    const tile = document.createElement('div');
-                    tile.className = 'step-tile';
-                    if (i === move.row && j === move.col) {
-                        tile.classList.add('target');
-                    }
-                    stepGrid.appendChild(tile);
-                }
-            }
-
-            stepInfo.appendChild(stepNumber);
-            stepInfo.appendChild(stepText);
-            stepInfo.appendChild(stepGrid);
-
-            container.appendChild(stepInfo);
-            container.appendChild(createBoardState(move.grid));
-            step.appendChild(container);
-            solutionSteps.appendChild(step);
-        });
-
-        // Fade back in after populating
-        setTimeout(() => {
-            solutionSteps.style.opacity = '1';
-        }, 50);
-    }, 300); // Wait for fade out transition
+// Where on the board a press happens, as a 3x3 with the pressed tile filled
+function createWhere(row, col) {
+    const where = document.createElement('div');
+    where.className = 'where';
+    where.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('span');
+        if (i === row * 3 + col) cell.className = 'hit';
+        where.appendChild(cell);
+    }
+    return where;
 }
 
-// Save current puzzle state
-function savePuzzle() {
-    const saveName = document.getElementById('saveName').value.trim();
-    if (!saveName) {
-        showAlert('Please enter a name for the puzzle', 'warning');
+function createStepRow(number, pressText, subText, whereNode, boardNode) {
+    const tr = document.createElement('tr');
+    const n = document.createElement('td');
+    n.className = 'n';
+    n.textContent = number;
+    const press = document.createElement('td');
+    press.className = 'press';
+    press.textContent = pressText;
+    if (subText) {
+        const sub = document.createElement('div');
+        sub.className = 'sub';
+        sub.textContent = subText;
+        press.appendChild(sub);
+    }
+    const where = document.createElement('td');
+    if (whereNode) where.appendChild(whereNode);
+    const after = document.createElement('td');
+    after.appendChild(boardNode);
+    tr.append(n, press, where, after);
+    return tr;
+}
+
+// Display the solution
+function displaySolution(moves, finalGrid) {
+    const elapsed = Date.now() - solverState.startTime;
+
+    if (moves.length === 0) {
+        setSolverStatus('Already open', solverState.statesExplored, elapsed);
+        showNotice('ok', 'check', 'Already open', 'Every corner tile already matches its corner. Nothing to press.');
+        announce('Already open. Nothing to press.');
         return;
     }
 
-    const puzzleState = {
-        grid: grid,
-        corners: {
-            topLeft: document.querySelector('.corner-tl').className.split(' ').find(c => colors.includes(c)),
-            topRight: document.querySelector('.corner-tr').className.split(' ').find(c => colors.includes(c)),
-            bottomLeft: document.querySelector('.corner-bl').className.split(' ').find(c => colors.includes(c)),
-            bottomRight: document.querySelector('.corner-br').className.split(' ').find(c => colors.includes(c))
-        }
+    const body = $('stepsBody');
+    const rows = [createStepRow(0, 'Start', null, null, createBoardState(grid))];
+    let before = grid;
+    moves.forEach((move, index) => {
+        const pressed = before[move.row][move.col];
+        rows.push(createStepRow(index + 1,
+            `Row ${move.row + 1}, column ${move.col + 1}`,
+            `${pressed[0].toUpperCase()}${pressed.slice(1)} tile`,
+            createWhere(move.row, move.col),
+            createBoardState(move.grid)));
+        before = move.grid;
+    });
+    body.replaceChildren(...rows);
+
+    $('solMsg').replaceChildren();
+    $('stepsTable').hidden = false;
+    $('stepsTable').removeAttribute('aria-busy');
+    const presses = plural(moves.length, 'press', 'presses');
+    $('moveCount').textContent = presses;
+    setSolverStatus(`Solved in ${presses}`, solverState.statesExplored, elapsed);
+    announce(`Solved in ${presses}.`);
+}
+
+// The puzzle on the board, named in the title line
+let currentName = null;
+function setContext(text) {
+    $('ctx').textContent = text;
+}
+
+// Saved puzzles live in localStorage, so they survive closing the tab
+function readSaved() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    } catch {
+        return {};
+    }
+}
+
+function writeSaved(saved) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// Earlier versions kept puzzles in sessionStorage; bring any from this tab across once
+function migrateSessionPuzzles() {
+    try {
+        const old = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
+        const names = Object.keys(old);
+        if (!names.length) return;
+        const saved = readSaved();
+        names.forEach(name => { if (!(name in saved)) saved[name] = old[name]; });
+        if (writeSaved(saved)) sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+        // Storage blocked: nothing to bring across
+    }
+}
+
+function setSaveError(message) {
+    const input = $('saveName');
+    const help = $('saveHelp');
+    if (message) {
+        input.setAttribute('aria-invalid', 'true');
+        help.textContent = message;
+        help.classList.add('err');
+    } else {
+        input.removeAttribute('aria-invalid');
+        help.textContent = 'Kept in this browser.';
+        help.classList.remove('err');
+    }
+}
+
+// Save current puzzle state
+function savePuzzle(event) {
+    event.preventDefault();
+    const input = $('saveName');
+    const saveBtn = $('saveBtn');
+    const saveName = input.value.trim();
+    if (!saveName) {
+        setSaveError('Enter a name for this puzzle.');
+        input.focus();
+        return;
+    }
+
+    const savedPuzzles = readSaved();
+    const replacing = saveName in savedPuzzles;
+    savedPuzzles[saveName] = {
+        grid: JSON.parse(JSON.stringify(grid)),
+        corners: getCornerColors()
     };
+    if (!writeSaved(savedPuzzles)) {
+        setSaveError('This browser blocked saving. Allow site data for this page and try again.');
+        flashButtonLabel(saveBtn, 'fail');
+        return;
+    }
 
-    // Get existing saved puzzles
-    const savedPuzzles = JSON.parse(sessionStorage.getItem('moraJaiPuzzles') || '{}');
-    savedPuzzles[saveName] = puzzleState;
-    sessionStorage.setItem('moraJaiPuzzles', JSON.stringify(savedPuzzles));
-
-    // Update the load dropdown
+    setSaveError(null);
+    input.value = '';
     updateLoadDropdown();
-
-    // Clear the save name input
-    document.getElementById('saveName').value = '';
-
-    showAlert('Puzzle saved successfully!', 'success');
+    $('loadPuzzle').value = saveName;
+    updateDeleteButton();
+    currentName = saveName;
+    setContext(saveName);
+    flashButtonLabel(saveBtn, replacing ? 'replaced' : 'done');
+    announce(replacing ? `Replaced ${saveName}.` : `Saved ${saveName}.`);
 }
 
 // Load a saved puzzle
 function loadPuzzle() {
-    const select = document.getElementById('loadPuzzle');
-    const puzzleName = select.value;
+    const puzzleName = $('loadPuzzle').value;
+    updateDeleteButton();
     if (!puzzleName) return;
 
-    const savedPuzzles = JSON.parse(sessionStorage.getItem('moraJaiPuzzles') || '{}');
-    const puzzleState = savedPuzzles[puzzleName];
-
+    const puzzleState = readSaved()[puzzleName];
     if (puzzleState) {
-        // Update grid
         grid = JSON.parse(JSON.stringify(puzzleState.grid));
+        setCornerColors(puzzleState.corners);
         updateGridDisplay();
-
-        // Update corner colors
-        document.querySelector('.corner-tl').className = `corner-color corner-tl ${puzzleState.corners.topLeft}`;
-        document.querySelector('.corner-tr').className = `corner-color corner-tr ${puzzleState.corners.topRight}`;
-        document.querySelector('.corner-bl').className = `corner-color corner-bl ${puzzleState.corners.bottomLeft}`;
-        document.querySelector('.corner-br').className = `corner-color corner-br ${puzzleState.corners.bottomRight}`;
-
+        currentName = puzzleName;
+        setContext(puzzleName);
         // Auto-solve the loaded puzzle
         solvePuzzle();
     }
 }
 
-// Update the load puzzle dropdown
+// Delete the chosen puzzle at once; the same button offers Undo for 5 seconds
+let pendingUndo = null;
+function deleteOrUndo() {
+    const btn = $('deleteBtn');
+    const saved = readSaved();
+
+    if (pendingUndo) {
+        const { name, state, wasCurrent } = pendingUndo;
+        clearTimeout(pendingUndo.timer);
+        pendingUndo = null;
+        saved[name] = state;
+        writeSaved(saved);
+        updateLoadDropdown();
+        $('loadPuzzle').value = name;
+        setButtonLabel(btn, 'idle');
+        updateDeleteButton();
+        if (wasCurrent) {
+            currentName = name;
+            setContext(name);
+        }
+        announce(`Restored ${name}.`);
+        return;
+    }
+
+    const name = $('loadPuzzle').value;
+    if (!name || !(name in saved)) return;
+    const state = saved[name];
+    delete saved[name];
+    writeSaved(saved);
+    const wasCurrent = currentName === name;
+    if (wasCurrent) {
+        currentName = null;
+        setContext('Unsaved puzzle');
+    }
+    updateLoadDropdown();
+    setButtonLabel(btn, 'undo');
+    btn.disabled = false;
+    btn.title = `Put ${name} back`;
+    pendingUndo = {
+        name, state, wasCurrent,
+        timer: setTimeout(() => {
+            pendingUndo = null;
+            setButtonLabel(btn, 'idle');
+            updateDeleteButton();
+        }, 5000)
+    };
+    announce(`Deleted ${name}. Undo delete is available for 5 seconds.`);
+}
+
+function updateDeleteButton() {
+    if (pendingUndo) return;
+    const btn = $('deleteBtn');
+    const chosen = $('loadPuzzle').value;
+    btn.disabled = !chosen;
+    btn.title = chosen ? `Delete ${chosen}` : 'Choose a saved puzzle first';
+}
+
+// Update the load puzzle dropdown, the count beside the group and its help line
 function updateLoadDropdown() {
-    const select = document.getElementById('loadPuzzle');
-    const savedPuzzles = JSON.parse(sessionStorage.getItem('moraJaiPuzzles') || '{}');
+    const select = $('loadPuzzle');
+    const names = Object.keys(readSaved()).sort((a, b) => a.localeCompare(b));
 
     // Clear existing options except the first one
     while (select.options.length > 1) {
         select.remove(1);
     }
-
-    // Add saved puzzles
-    Object.keys(savedPuzzles).sort().forEach(name => {
+    names.forEach(name => {
         const option = document.createElement('option');
         option.value = name;
         option.textContent = name;
         select.appendChild(option);
     });
+
+    select.disabled = names.length === 0;
+    $('savedCount').textContent = names.length;
+    $('loadHelp').textContent = names.length
+        ? 'Choosing one puts it on the board.'
+        : 'None yet. Name the board and save it.';
+    updateDeleteButton();
 }
 
 // Add keyboard support for grid tiles
@@ -837,58 +969,97 @@ function enableTileHoverTracking() {
 
 // Add keyboard support for corner selectors
 function enableCornerHoverTracking() {
-    const corners = document.querySelectorAll('.corner-color');
-    corners.forEach(corner => {
+    document.querySelectorAll('.corner').forEach(corner => {
         corner.onmouseenter = () => { hoveredCorner = corner; };
         corner.onmouseleave = () => { if (hoveredCorner === corner) hoveredCorner = null; };
     });
 }
 
+function setTileColor(tile, color) {
+    grid[parseInt(tile.dataset.row)][parseInt(tile.dataset.col)] = color;
+    boardChanged();
+    tile.focus();
+}
+
+function setCornerColor(corner, color) {
+    corners[corner.dataset.corner] = color;
+    boardChanged();
+    corner.focus();
+}
+
 function handleGlobalKeydown(e) {
+    // Leave typing, browser shortcuts and the open Help window alone
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    if (e.target.closest && e.target.closest('input, select, textarea, dialog')) return;
     const key = e.key.toLowerCase();
     if (!colorKeyMap[key]) return;
-    // Priority: hovered tile > focused tile > hovered corner > focused corner
-    if (hoveredTile) {
-        const row = parseInt(hoveredTile.dataset.row);
-        const col = parseInt(hoveredTile.dataset.col);
-        grid[row][col] = colorKeyMap[key];
-        updateGridDisplay();
-        hoveredTile.focus();
-        solvePuzzle(); // Auto-solve on change
-        return;
-    }
+    const color = colorKeyMap[key];
     const active = document.activeElement;
-    if (active && active.classList.contains('tile')) {
-        const row = parseInt(active.dataset.row);
-        const col = parseInt(active.dataset.col);
-        grid[row][col] = colorKeyMap[key];
-        updateGridDisplay();
-        active.focus();
-        solvePuzzle(); // Auto-solve on change
-        return;
+    // Priority: hovered tile > focused tile > hovered corner > focused corner
+    if (hoveredTile) return setTileColor(hoveredTile, color);
+    if (active && active.classList.contains('tile')) return setTileColor(active, color);
+    if (hoveredCorner) return setCornerColor(hoveredCorner, color);
+    if (active && active.classList.contains('corner')) return setCornerColor(active, color);
+}
+
+// Theme: dark by default, light from the toggle, remembered in this browser
+function applyTheme(light) {
+    const root = document.documentElement;
+    if (light) root.dataset.theme = 'light';
+    else delete root.dataset.theme;
+    const btn = $('themeBtn');
+    const label = light ? 'Switch to dark theme' : 'Switch to light theme';
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+    btn.querySelector('use').setAttribute('href', light ? '#i-moon' : '#i-sun');
+    $('themeColor').content = getComputedStyle(root).getPropertyValue('--bg').trim();
+}
+
+function toggleTheme() {
+    const light = document.documentElement.dataset.theme !== 'light';
+    applyTheme(light);
+    try {
+        if (light) localStorage.setItem(THEME_KEY, 'light');
+        else localStorage.removeItem(THEME_KEY);
+    } catch {
+        // Not remembered when storage is blocked; the toggle still works for this visit
     }
-    if (hoveredCorner) {
-        colors.forEach(c => hoveredCorner.classList.remove(c));
-        hoveredCorner.classList.add(colorKeyMap[key]);
-        hoveredCorner.focus();
-        solvePuzzle(); // Auto-solve on change
-        return;
-    }
-    if (active && active.classList.contains('corner-color')) {
-        colors.forEach(c => active.classList.remove(c));
-        active.classList.add(colorKeyMap[key]);
-        active.focus();
-        solvePuzzle(); // Auto-solve on change
-        return;
-    }
+}
+
+// Help dialog: focus goes back to the Help button when it closes
+function initializeHelp() {
+    const dlg = $('helpDlg');
+    $('helpBtn').onclick = () => dlg.showModal();
+    dlg.querySelectorAll('[data-close]').forEach(b => { b.onclick = () => dlg.close(); });
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    dlg.addEventListener('close', () => $('helpBtn').focus());
 }
 
 // Initialize the game
 function initializeGame() {
+  migrateSessionPuzzles();
   initializeGrid();
   updateLoadDropdown();
   enableTileHoverTracking();
   enableCornerHoverTracking();
+  applyTheme(document.documentElement.dataset.theme === 'light');
+  initializeHelp();
+
+  $('themeBtn').onclick = toggleTheme;
+  $('solveBtn').onclick = () => { if (!solverState.isRunning) solvePuzzle(); };
+  $('stopBtn').onclick = cancelSolve;
+  $('randomBtn').onclick = () => {
+      currentName = null;
+      setRandomGrid();
+      setContext('Random puzzle');
+  };
+  $('saveForm').addEventListener('submit', savePuzzle);
+  $('saveName').addEventListener('input', () => {
+      if ($('saveName').getAttribute('aria-invalid') && $('saveName').value.trim()) setSaveError(null);
+  });
+  $('loadPuzzle').onchange = loadPuzzle;
+  $('deleteBtn').onclick = deleteOrUndo;
+
   window.removeEventListener("keydown", handleGlobalKeydown);
   window.addEventListener("keydown", handleGlobalKeydown);
   // Auto-solve on initial page load

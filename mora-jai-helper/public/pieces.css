@@ -1,0 +1,23 @@
+/* Mora Jai tile colours. These are the puzzle's content, not UI colour: the game's own eight colours,
+   the same in both themes. Each fill has an --on-piece-* partner for the letter on the tile (4.5:1).
+   A tile's 1px --input border keeps it 3:1 from the pane it sits on (dark tiles on Ink, light ones on Oat). */
+
+:root {
+  --piece-orange: #E8892B; --on-piece-orange: #141414;
+  --piece-yellow: #E9C53A; --on-piece-yellow: #141414;
+  --piece-blue:   #2F5FD0; --on-piece-blue:   #FFFFFF;
+  --piece-black:  #141414; --on-piece-black:  #FFFFFF;
+  --piece-gray:   #8C8C8C; --on-piece-gray:   #141414;
+  --piece-pink:   #E77BB6; --on-piece-pink:   #141414;
+  --piece-purple: #7B3FA8; --on-piece-purple: #FFFFFF;
+  --piece-white:  #F2F2F2; --on-piece-white:  #141414;
+}
+
+.piece-orange { background: var(--piece-orange); color: var(--on-piece-orange); }
+.piece-yellow { background: var(--piece-yellow); color: var(--on-piece-yellow); }
+.piece-blue   { background: var(--piece-blue);   color: var(--on-piece-blue); }
+.piece-black  { background: var(--piece-black);  color: var(--on-piece-black); }
+.piece-gray   { background: var(--piece-gray);   color: var(--on-piece-gray); }
+.piece-pink   { background: var(--piece-pink);   color: var(--on-piece-pink); }
+.piece-purple { background: var(--piece-purple); color: var(--on-piece-purple); }
+.piece-white  { background: var(--piece-white);  color: var(--on-piece-white); }
