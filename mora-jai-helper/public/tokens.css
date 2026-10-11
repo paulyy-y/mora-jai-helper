@@ -3,7 +3,10 @@
    Names follow the hub and homectl stylesheets, so either can take these values as they are.
    Every text pair reaches 4.5:1 and every control pair 3:1 in both themes:
    check with `node <web-ui-kronus>/scripts/ui-scan.mjs <this file>` after any change.
-   Fonts are the ones every system already has: nothing to download or bundle. */
+   Fonts: IBM Plex from the shared host (paulyyOrg/fonts), imported below, so a copy of this file brings them
+   with it; nothing to bundle per repo. Each stack ends in system faces, used when the host can't be reached. */
+
+@import url("https://fonts.paulyy.com/plex.css");
 
 :root {
   color-scheme: dark;
@@ -45,11 +48,11 @@
   --series-2: #8C8A84; --series-3: #71736F;
 
   /* Type */
-  /* Type: system fonts only. Display: Bahnschrift's condensed cut (Windows 10+), Avenir Next Condensed (macOS),
-     Roboto Condensed (Android), Arial Narrow. Text: the platform UI face. Code: the platform monospace. */
-  --font-display: "Bahnschrift SemiCondensed", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
-  --font: system-ui, "Segoe UI", -apple-system, Roboto, "Noto Sans", "Liberation Sans", sans-serif;
-  --mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, "Liberation Mono", monospace;
+  /* Type: IBM Plex Sans for headings, labels and text, IBM Plex Mono for code (owner's pick, 2026-10-10).
+     --font-display stays a separate token so headings can change face without touching text. */
+  --font-display: "IBM Plex Sans", system-ui, "Segoe UI", -apple-system, Roboto, sans-serif;
+  --font: "IBM Plex Sans", system-ui, "Segoe UI", -apple-system, Roboto, "Noto Sans", "Liberation Sans", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, "Liberation Mono", monospace;
   --text-xs: 12px;
   --text-sm: 13px;
   --text-md: 14px;   /* web app and settings body */
@@ -113,9 +116,11 @@
 body { margin: 0; background: var(--bg); color: var(--text); font: var(--text-md) / var(--leading) var(--font); }
 h1, h2, h3, h4, legend, th { font-family: var(--font-display); }
 h1, h2, h3 { line-height: 1.2; margin: 0; }
-h1 { font-size: var(--text-2xl); font-weight: 700; }
-h2 { font-size: var(--text-xl); font-weight: 700; }
+h1 { font-size: var(--text-2xl); font-weight: 600; }
+h2 { font-size: var(--text-xl); font-weight: 600; }
 h3 { font-size: 1em; font-weight: 600; }
+/* Labels (legends, table headers, sidebar group headings, badges): sentence case, never uppercase (owner, 2026-10-10) */
+legend, th { font-size: var(--text-sm); font-weight: 600; color: var(--muted); }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 input, select, textarea { font: inherit; border: 1px solid var(--input); border-radius: var(--radius); background: var(--panel); color: var(--text); }
 @media (max-width: 767px) { input, select, textarea { font-size: 16px; } }
