@@ -1,12 +1,13 @@
 /* House design system tokens (references/design-system.md): classic desktop drawn flat, sock palette.
-   Ink (dark) is the default; Oat (light) applies when <html data-theme="light">.
+   Ink (dark) is the default; Oat (light) applies when <html data-theme="light">, which the shared
+   theme script sets (https://ui.paulyy.com/theme.js, with <theme-toggle> in the title line).
    Names follow the hub and homectl stylesheets, so either can take these values as they are.
    Every text pair reaches 4.5:1 and every control pair 3:1 in both themes:
    check with `node <web-ui-kronus>/scripts/ui-scan.mjs <this file>` after any change.
-   Fonts: IBM Plex from the shared host (paulyyOrg/fonts), imported below, so a copy of this file brings them
+   Fonts: IBM Plex from the shared host (paulyyOrg/ui), imported below, so a copy of this file brings them
    with it; nothing to bundle per repo. Each stack ends in system faces, used when the host can't be reached. */
 
-@import url("https://fonts.paulyy.com/plex.css");
+@import url("https://ui.paulyy.com/plex.css");
 
 :root {
   color-scheme: dark;

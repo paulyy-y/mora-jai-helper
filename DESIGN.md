@@ -10,8 +10,8 @@ The contract every UI change in this repo follows. Written when the repo got its
 ## Tokens
 - Source: `mora-jai-helper/public/tokens.css`, an unchanged copy of `assets/tokens.css` (the only place UI colors, sizes, radii, shadows and durations are defined). `index.html` holds layout and components only.
 - Tile colours: `mora-jai-helper/public/pieces.css` holds the game's eight tile colours (`--piece-*`) with a letter colour for each (`--on-piece-*`). They are the puzzle's content, not UI colour, and stay the same in both themes. Every tile and corner shows its shortcut letter, so colour never carries meaning alone.
-- Themes: Ink (dark) by default; Oat (light) via `data-theme="light"` on `<html>`, set by the sun/moon icon button at the right of the title line and remembered in `localStorage` (`moraJai.theme`). The UI says light and dark, never Ink or Oat.
-- Fonts: IBM Plex Sans and IBM Plex Mono from `https://fonts.paulyy.com/plex.css`, imported by tokens.css, so nothing is bundled here; each stack ends in system faces for when that host can't be reached. The favicon's inline SVG keeps a system face, since an SVG used as an image can't load web fonts.
+- Themes: Ink (dark) by default; Oat (light) via `data-theme="light"` on `<html>`, set by the house's shared theme script (`https://ui.paulyy.com/theme.js`, loaded in `<head>`) and its `<theme-toggle>` sun/moon button at the right of the title line. The choice is the shared `theme` cookie on `.paulyy.com`, so it matches every other paulyy.com site; a light choice saved here before (`localStorage` `moraJai.theme`) moves into it once. The script also keeps `<meta name="theme-color">` on `--bg`. The UI says light and dark, never Ink or Oat.
+- Fonts: IBM Plex Sans and IBM Plex Mono from `https://ui.paulyy.com/plex.css`, imported by tokens.css, so nothing is bundled here; each stack ends in system faces for when that host can't be reached. The favicon's inline SVG keeps a system face, since an SVG used as an image can't load web fonts.
 
 | Token | Role | Pairs (minimum) |
 |---|---|---|
