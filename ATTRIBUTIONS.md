@@ -7,7 +7,7 @@ or copies or adapts outside code, adds its entry in the same change.
 
 | Source project | Version / commit | License | What was taken | Where it lives here |
 |---|---|---|---|---|
-| [Lucide](https://lucide.dev) | lucide-react 1.50.0 | ISC | SVG paths of sun, moon, play, square, shuffle, circle-question-mark, save, trash-2, undo-2, x, check, clock | inline `<symbol>` sprite in `mora-jai-helper/public/index.html` |
+| [Lucide](https://lucide.dev) | lucide-react 1.50.0 | ISC | SVG paths of play, square, shuffle, circle-question-mark, save, trash-2, undo-2, x, check, clock | inline `<symbol>` sprite in `mora-jai-helper/public/index.html` |
 | House design system (paulyyOrg/home, `web-ui-kronus` skill) | `assets/tokens.css` as of 2026-10-10 | owner's own work | design tokens, copied unchanged | `mora-jai-helper/public/tokens.css` |
 
 ## Packages

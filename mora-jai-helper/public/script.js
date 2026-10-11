@@ -24,7 +24,6 @@ let corners = { tl: 'orange', tr: 'orange', bl: 'orange', br: 'orange' };
 const cornerNames = { tl: 'Top-left', tr: 'Top-right', bl: 'Bottom-left', br: 'Bottom-right' };
 
 const STORAGE_KEY = 'moraJaiPuzzles';
-const THEME_KEY = 'moraJai.theme';
 const $ = id => document.getElementById(id);
 
 // Track hovered tile or corner
@@ -1002,30 +1001,6 @@ function handleGlobalKeydown(e) {
     if (active && active.classList.contains('corner')) return setCornerColor(active, color);
 }
 
-// Theme: dark by default, light from the toggle, remembered in this browser
-function applyTheme(light) {
-    const root = document.documentElement;
-    if (light) root.dataset.theme = 'light';
-    else delete root.dataset.theme;
-    const btn = $('themeBtn');
-    const label = light ? 'Switch to dark theme' : 'Switch to light theme';
-    btn.setAttribute('aria-label', label);
-    btn.title = label;
-    btn.querySelector('use').setAttribute('href', light ? '#i-moon' : '#i-sun');
-    $('themeColor').content = getComputedStyle(root).getPropertyValue('--bg').trim();
-}
-
-function toggleTheme() {
-    const light = document.documentElement.dataset.theme !== 'light';
-    applyTheme(light);
-    try {
-        if (light) localStorage.setItem(THEME_KEY, 'light');
-        else localStorage.removeItem(THEME_KEY);
-    } catch {
-        // Not remembered when storage is blocked; the toggle still works for this visit
-    }
-}
-
 // Help dialog: focus goes back to the Help button when it closes
 function initializeHelp() {
     const dlg = $('helpDlg');
@@ -1042,10 +1017,8 @@ function initializeGame() {
   updateLoadDropdown();
   enableTileHoverTracking();
   enableCornerHoverTracking();
-  applyTheme(document.documentElement.dataset.theme === 'light');
   initializeHelp();
 
-  $('themeBtn').onclick = toggleTheme;
   $('solveBtn').onclick = () => { if (!solverState.isRunning) solvePuzzle(); };
   $('stopBtn').onclick = cancelSolve;
   $('randomBtn').onclick = () => {
