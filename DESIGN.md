@@ -11,7 +11,7 @@ The contract every UI change in this repo follows. Written when the repo got its
 - Source: `mora-jai-helper/public/tokens.css`, an unchanged copy of `assets/tokens.css` (the only place UI colors, sizes, radii, shadows and durations are defined). `index.html` holds layout and components only.
 - Tile colours: `mora-jai-helper/public/pieces.css` holds the game's eight tile colours (`--piece-*`) with a letter colour for each (`--on-piece-*`). They are the puzzle's content, not UI colour, and stay the same in both themes. Every tile and corner shows its shortcut letter, so colour never carries meaning alone.
 - Themes: Ink (dark) by default; Oat (light) via `data-theme="light"` on `<html>`, set by the sun/moon icon button at the right of the title line and remembered in `localStorage` (`moraJai.theme`). The UI says light and dark, never Ink or Oat.
-- Fonts: system fonts only (the stacks in tokens.css): nothing to download or bundle, no external requests.
+- Fonts: IBM Plex Sans and IBM Plex Mono from `https://fonts.paulyy.com/plex.css`, imported by tokens.css, so nothing is bundled here; each stack ends in system faces for when that host can't be reached. The favicon's inline SVG keeps a system face, since an SVG used as an image can't load web fonts.
 
 | Token | Role | Pairs (minimum) |
 |---|---|---|
@@ -25,7 +25,7 @@ The contract every UI change in this repo follows. Written when the repo got its
 | `--piece-*`, `--on-piece-*` | tile fills and the letter on them | 4.5:1 letter on fill |
 
 ## Type, space, shape, motion
-- Type: `--font-display` for headings, legends, table headers, uppercase labels and tile letters; `--font` for text; `--mono` is unused. Sizes 11 (uppercase labels) / 12 / 13 / 14 / 16 / 18 px.
+- Type: `--font-display` for headings, legends, table headers and tile letters; `--font` for text; `--mono` for the keys in Help. Labels (legends, table headers) are sentence case, 13px semibold in `--muted`, never uppercase. Sizes 12 / 13 / 14 / 16 / 18 px; weights 400 and 600, with 700 only for the letters on tiles.
 - Space: 4px steps. Radius: 2px on controls and tiles, 0 on panes and group boxes. Shadow: the Help dialog only.
 - Motion: only the Help dialog fades in (120 ms, `--dur-fast`); nothing else animates; off under reduced motion.
 - Breakpoints: phone below 768px, desktop from 768px.
