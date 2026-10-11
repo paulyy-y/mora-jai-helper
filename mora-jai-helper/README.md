@@ -57,7 +57,9 @@ npm run deploy
 ```
 mora-jai-helper/
 ├── public/           # Static assets
-│   ├── index.html    # Main HTML file
+│   ├── index.html    # Main HTML file (layout and components)
+│   ├── tokens.css    # House design tokens, an unchanged copy (see ../../DESIGN.md)
+│   ├── pieces.css    # The game's tile colours
 │   └── script.js     # Client-side JavaScript
 ├── wrangler.jsonc    # Cloudflare Workers configuration
 └── package.json      # Project dependencies and scripts

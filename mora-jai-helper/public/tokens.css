@@ -1,0 +1,139 @@
+/* House design system tokens (references/design-system.md): classic desktop drawn flat, sock palette.
+   Ink (dark) is the default; Oat (light) applies when <html data-theme="light">.
+   Names follow the hub and homectl stylesheets, so either can take these values as they are.
+   Every text pair reaches 4.5:1 and every control pair 3:1 in both themes:
+   check with `node <web-ui-kronus>/scripts/ui-scan.mjs <this file>` after any change.
+   Fonts are the ones every system already has: nothing to download or bundle. */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces (Ink) */
+  --bg: #0F1010;        /* page */
+  --panel: #1A1B1B;     /* panes, cards, inputs on the page */
+  --code: #0A0B0B;      /* toolbars, table headers, code, status bar */
+  --sel: #3A2414;       /* selected row, pressed toggle, current tab tint */
+
+  /* Text on any surface */
+  --text: #EFE9DC;
+  --muted: #C2BBAC;     /* secondary text, labels */
+  --faint: #9A9487;     /* metadata: dates, ids, counts in lists */
+
+  /* Lines: --border separates content (decorative), --input outlines controls and panes (3:1) */
+  --border: #303232;
+  --input: #6B6F6D;
+
+  /* Accent: action and selection only */
+  --accent: #EE8F45;    /* Ember */
+  --accent-fill: #D9742A;
+  --on-accent: #0F1010;
+  --focus: var(--accent);
+
+  /* Status, always with a word and an icon; -soft is the notice fill */
+  --ok: #6CCBA6;   --ok-soft: #13302A;    /* pine */
+  --warn: #EDB04A; --warn-soft: #382B12;  /* amber */
+  --bad: #F07A55;  --bad-soft: #41201A;   /* rust */
+  --info: #9FB6C9; --info-soft: #1F2A33;  /* slate */
+
+  /* The knit band: pine, amber, Ember, rust */
+  --band-1: #2FA57E; --band-2: #D99A2B; --band-3: #D9742A; --band-4: #D2532E;
+
+  /* Charts (design-system.md, "Charts and figures"). Categorical, in this order: pine, slate, Ember, amber.
+     Amber and Ember nearly merge for red-green colour blindness, so the 4th series is also dashed and every
+     series is labelled. Focus: the series that matters in --accent, the rest in the two greys. All 3:1 on --panel. */
+  --cat-1: #6CCBA6; --cat-2: #9FB6C9; --cat-3: #EE8F45; --cat-4: #EDB04A;
+  --series-2: #8C8A84; --series-3: #71736F;
+
+  /* Type */
+  /* Type: system fonts only. Display: Bahnschrift's condensed cut (Windows 10+), Avenir Next Condensed (macOS),
+     Roboto Condensed (Android), Arial Narrow. Text: the platform UI face. Code: the platform monospace. */
+  --font-display: "Bahnschrift SemiCondensed", "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --font: system-ui, "Segoe UI", -apple-system, Roboto, "Noto Sans", "Liberation Sans", sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, "Liberation Mono", monospace;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;   /* web app and settings body */
+  --text-lg: 16px;   /* report and mobile body */
+  --text-xl: 18px;
+  --text-2xl: 22px;
+  --leading: 1.45;
+  --measure: 72ch;
+
+  /* Space: 4px steps */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Shape and depth: square, flat; a shadow only for menus and dialogs */
+  --radius: 2px;
+  --shadow: 0 2px 8px rgb(0 0 0 / 0.45);
+
+  /* Layers: sticky headers, menus, dialogs (there are no toasts) */
+  --z-sticky: 10;
+  --z-menu: 20;
+  --z-dialog: 30;
+
+  /* Motion: only menus and dialogs fade in; nothing else animates */
+  --dur-fast: 120ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Breakpoints (media queries can't read variables): phone below 768px, desktop from 768px,
+     the web app's properties pane beside the list from 1280px. No others. */
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #DDD0BA;        /* Oat (oat latte, 2026-10-10: a brown ground, not cream with near-white panes) */
+  --panel: #E9E0CE;
+  --code: #D2C4AC;
+  --sel: #EBCBAD;
+  --text: #1D1F1D;
+  --muted: #3D3B35;
+  --faint: #4F4C44;
+  --border: #C1B297;
+  --input: #695C4A;
+  --accent: #843608;
+  --accent-fill: #A04912;
+  --on-accent: #FFFFFF;
+  --ok: #0E5440;   --ok-soft: #D3E8DD;
+  --warn: #644100; --warn-soft: #EEDDB4;
+  --bad: #8A2411;  --bad-soft: #F0D0C4;
+  --info: #2F475D; --info-soft: #D7DFE6;
+  --band-1: #1F8A66; --band-2: #A87208; --band-3: #C25F1C; --band-4: #C2452A;
+  --cat-1: #13694F; --cat-2: #3B5870; --cat-3: #A3460F; --cat-4: #7F5300;
+  --series-2: #5E5C56; --series-3: #7A776F;
+  --shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+}
+
+/* Floor that every page built on these tokens keeps */
+body { margin: 0; background: var(--bg); color: var(--text); font: var(--text-md) / var(--leading) var(--font); }
+h1, h2, h3, h4, legend, th { font-family: var(--font-display); }
+h1, h2, h3 { line-height: 1.2; margin: 0; }
+h1 { font-size: var(--text-2xl); font-weight: 700; }
+h2 { font-size: var(--text-xl); font-weight: 700; }
+h3 { font-size: 1em; font-weight: 600; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+input, select, textarea { font: inherit; border: 1px solid var(--input); border-radius: var(--radius); background: var(--panel); color: var(--text); }
+@media (max-width: 767px) { input, select, textarea { font-size: 16px; } }
+button.primary { background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); border-radius: var(--radius); }
+code, pre, kbd { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+@media print { /* print in paper Oat whatever the screen theme: the near-white light values from before
+                  the 2026-10-10 oat-latte change, kept for print so pages don't put a brown ground on paper */
+  :root { color-scheme: light; --bg: #F3EEE5; --panel: #FFFCF6; --code: #E9E2D6; --sel: #FAE3CF; --text: #1D1F1D; --muted: #484A45; --faint: #63645D; --border: #DDD4C6; --input: #7A7264;
+    --accent: #A3460F; --accent-fill: #C25F1C; --on-accent: #FFFFFF;
+    --ok: #13694F; --ok-soft: #DDF0E8; --warn: #7F5300; --warn-soft: #F6E9C6; --bad: #A82E18; --bad-soft: #F8DCD3; --info: #3B5870; --info-soft: #E1E8EE;
+    --cat-1: #13694F; --cat-2: #3B5870; --cat-3: #A3460F; --cat-4: #7F5300; --series-2: #6F6E69; --series-3: #8E8C85; }
+  .band, nav, .copybar, .switch, .toolbar { display: none; }
+  table, fieldset, figure, pre { break-inside: avoid; }
+}
+.band { height: 4px; background:
+  repeating-linear-gradient(90deg, transparent 0 3px, color-mix(in srgb, var(--bg) 45%, transparent) 3px 4px),
+  linear-gradient(180deg, var(--band-1) 0 25%, var(--band-2) 25% 50%, var(--band-3) 50% 75%, var(--band-4) 75% 100%); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

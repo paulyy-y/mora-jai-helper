@@ -1,637 +1,269 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Mora Jai Puzzle Solver - A tool to help solve and visualize Mora Jai puzzles with step-by-step solutions">
-    <title>Mora Jai Puzzle Solver</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .grid-container {
-            position: relative;
-            width: 310px;
-            margin: 0 auto;
-            padding: 0;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            gap: 5px;
-            margin: 20px 0;
-        }
-        .tile {
-            width: 100px;
-            height: 100px;
-            border: 2px solid #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-weight: bold;
-            color: white;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
-            transition: transform 0.2s, background-color 0.3s ease;
-        }
-        .tile:hover {
-            transform: scale(1.05);
-        }
-        .corner-color {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #333;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.3s ease;
-            position: absolute;
-            z-index: 2;
-        }
-        .corner-color:hover {
-            transform: scale(1.1);
-        }
-        .corner-tl {
-            top: -25px;
-            left: -25px;
-        }
-        .corner-tr {
-            top: -25px;
-            right: -25px;
-        }
-        .corner-bl {
-            bottom: -25px;
-            left: -25px;
-        }
-        .corner-br {
-            bottom: -25px;
-            right: -25px;
-        }
-        .controls {
-            margin: 20px 0;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .solution {
-            margin-top: 20px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            height: 600px;
-            display: flex;
-            flex-direction: column;
-        }
-        .solution h2 {
-            margin-top: 0;
-            color: #333;
-        }
-        .solution-steps {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-            transition: opacity 0.3s ease;
-            overflow-y: auto;
-            flex: 1;
-            min-height: 0;
-        }
-        .solution-step {
-            padding: 10px;
-            margin: 5px 0;
-            background-color: #f8f9fa;
-            border-left: 4px solid #007bff;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            animation: fadeSlideIn 0.4s ease forwards;
-            opacity: 0;
-        }
-        .solution-step:hover {
-            background-color: #e9ecef;
-        }
-        .step-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 20px);
-            gap: 2px;
-            margin-left: 10px;
-        }
-        .step-tile {
-            width: 20px;
-            height: 20px;
-            border: 1px solid #333;
-            background-color: #ddd;
-        }
-        .step-tile.target {
-            background-color: #007bff;
-            border: 2px solid #0056b3;
-        }
-        .step-number {
-            font-weight: bold;
-            color: #007bff;
-            min-width: 25px;
-        }
-        .step-text {
-            flex-grow: 1;
-        }
-        .board-state {
-            display: grid;
-            grid-template-columns: repeat(3, 30px);
-            gap: 2px;
-            margin-left: 20px;
-            border: 2px solid #333;
-            padding: 2px;
-            background-color: #fff;
-        }
-        .board-tile {
-            width: 30px;
-            height: 30px;
-            border: 1px solid #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            color: white;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
-        }
-        .board-tile.white {
-            color: black;
-            text-shadow: none;
-        }
-        .step-container {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .step-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-shrink: 0;
-        }
-        .step-text {
-            flex-grow: 1;
-            min-width: 200px;
-        }
-        .orange { background-color: #FFA500; }
-        .yellow { background-color: #FFD700; }
-        .blue { background-color: #0000FF; }
-        .black { background-color: #000000; }
-        .gray { background-color: #808080; }
-        .pink { background-color: #FF69B4; }
-        .purple { background-color: #800080; }
-        .white { background-color: #FFFFFF; color: #000000; text-shadow: none; }
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 15px 0;
-            justify-content: center;
-            align-items: center;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Mora Jai solver: set up a puzzle box from Blue Prince and get the shortest list of tiles to press.">
+<meta name="theme-color" id="themeColor" content="#0F1010">
+<title>Mora Jai solver</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1010'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Bahnschrift SemiCondensed,Arial Narrow,sans-serif' font-weight='700' font-size='21' fill='%23EFE9DC'%3EM%3C/text%3E%3Crect x='9' y='26' width='14' height='3' fill='%23EE8F45'/%3E%3C/svg%3E">
+<script>try { if (localStorage.getItem("moraJai.theme") === "light") document.documentElement.dataset.theme = "light"; } catch {}</script>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="pieces.css">
+<style>
+  html, body { height: 100%; }
+  body { display: flex; justify-content: center; }
+  [hidden] { display: none !important; }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-        .save-load-group {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-            margin: 10px 0;
-            justify-content: center;
-        }
+  /* App frame: band, title line, toolbar, panes, status bar */
+  .app { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; width: 100%; max-width: 1120px; height: 100dvh; }
+  .titleline { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border); }
+  .titleline h1 { font-size: var(--text-lg); }
+  .titleline .ctx { color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .titleline .btn.icon { margin-left: auto; }
+  .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) var(--space-4); background: var(--code); border-bottom: 1px solid var(--input); }
+  .toolbar .sep { width: 1px; align-self: stretch; background: var(--input); margin: 0 var(--space-1); }
+  .toolbar .push { margin-left: auto; }
 
-        .save-name {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            width: 150px;
-        }
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 28px; padding: 0 var(--space-3); font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--input); border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
+  .btn:hover { border-color: var(--text); }
+  .btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+  .btn.primary:hover { background: var(--accent-fill); border-color: var(--accent-fill); }
+  .btn:disabled, .btn[aria-disabled="true"] { cursor: not-allowed; color: var(--faint); background: var(--panel); border-color: var(--border); font-weight: 400; }
+  .btn.icon { width: 28px; padding: 0; }
+  .i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .mark { width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 3; }
+  /* Each label a button can show sits in one cell, so the button keeps the width of its longest label */
+  .lbls { display: inline-grid; }
+  .lbls > span { grid-area: 1 / 1; visibility: hidden; }
+  .lbls > span.on { visibility: visible; }
 
-        select {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: white;
-            min-width: 150px;
-        }
+  /* Panes and group boxes */
+  /* Desktop: board over saved puzzles on the left, the solution beside them; DOM order is board, solution, saved */
+  main { display: grid; grid-template-columns: 360px minmax(0, 1fr); grid-template-rows: auto 1fr; grid-template-areas: "board sol" "saved sol";
+    gap: var(--space-4); padding: var(--space-4); min-height: 0; overflow: auto; }
+  .boardbox { grid-area: board; }
+  .savedbox { grid-area: saved; }
+  .solpane { grid-area: sol; }
+  fieldset.group { margin: 0; padding: var(--space-3); border: 1px solid var(--input); min-inline-size: 0; background: var(--panel); }
+  fieldset.group > legend { padding: 0 var(--space-1); font: 600 11px / 1.2 var(--font-display); text-transform: uppercase; letter-spacing: .1em; color: var(--faint); }
+  legend .count { margin-left: var(--space-2); font-variant-numeric: tabular-nums; }
+  .hint { margin: 0 0 var(--space-3); color: var(--muted); font-size: var(--text-sm); }
 
-        button {
-            padding: 8px 16px;
-            margin: 0;
-            border: none;
-            border-radius: 4px;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            white-space: nowrap;
-        }
+  /* The board: corner targets around a 3x3 grid of tiles */
+  .board { --tile: 80px; --corner: 32px; display: grid; gap: var(--space-1); justify-content: center;
+    grid-template-columns: var(--corner) repeat(3, var(--tile)) var(--corner); grid-template-rows: var(--corner) repeat(3, var(--tile)) var(--corner); }
+  .tile, .corner { display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--input); border-radius: var(--radius); cursor: pointer; font-family: var(--font-display); font-weight: 700; }
+  .tile { font-size: var(--text-xl); }
+  .corner { font-size: var(--text-sm); }
+  .tile:hover, .corner:hover { outline: 2px solid var(--text); outline-offset: 1px; }
+  .tile:focus-visible, .corner:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .corner[data-corner="tl"] { grid-area: 1 / 1; }
+  .corner[data-corner="tr"] { grid-area: 1 / 5; }
+  .corner[data-corner="bl"] { grid-area: 5 / 1; }
+  .corner[data-corner="br"] { grid-area: 5 / 5; }
 
-        button:hover {
-            background-color: #0056b3;
-        }
+  /* Fields */
+  .field + .field { margin-top: var(--space-3); }
+  .field > label { display: block; margin-bottom: var(--space-1); }
+  .field .row { display: flex; gap: var(--space-2); }
+  .field input, .field select { flex: 1; min-width: 0; min-height: 28px; padding: 0 var(--space-2); }
+  .help { margin: var(--space-1) 0 0; min-height: calc(var(--text-sm) * var(--leading)); color: var(--muted); font-size: var(--text-sm); }
+  .help.err { color: var(--bad); }
+  input[aria-invalid="true"] { border-color: var(--bad); }
 
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        h2 {
-            color: #444;
-            margin-bottom: 15px;
-        }
-        .corner-label, .corner-label-tl, .corner-label-tr, .corner-label-bl, .corner-label-br {
-            position: static !important;
-            font-size: 12px;
-            color: #666;
-            margin: 2px 0 2px 0;
-        }
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 300px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 10px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        .tooltip .tooltiptext::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #333 transparent transparent transparent;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            overflow-y: auto;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 90%;
-            max-width: 600px;
-            border-radius: 8px;
-            position: relative;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-        .close-modal {
-            position: sticky;
-            top: 0;
-            right: 0;
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            background-color: #fefefe;
-            padding: 0 5px;
-            z-index: 1;
-        }
-        .close-modal:hover {
-            color: black;
-        }
-        .info-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            transition: transform 0.2s, background-color 0.2s;
-        }
-        .info-button:hover {
-            background-color: #0056b3;
-            transform: scale(1.1);
-        }
-        button:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-        }
-        button:disabled:hover {
-            background-color: #6c757d;
-        }
-        .cancel-btn {
-            background-color: #dc3545;
-            visibility: hidden;
-            opacity: 0;
-            max-width: 0;
-            padding: 0;
-            margin: 0;
-            overflow: hidden;
-            transition: opacity 0.2s ease, visibility 0.2s, max-width 0.2s ease, padding 0.2s ease, margin 0.2s ease;
-        }
-        .cancel-btn.visible {
-            visibility: visible;
-            opacity: 1;
-            max-width: 200px;
-            padding: 8px 16px;
-            margin: 0;
-        }
-        .cancel-btn:hover {
-            background-color: #c82333;
-        }
-        .solver-status {
-            margin-top: 10px;
-            padding: 0;
-            background-color: #e9ecef;
-            border-radius: 4px;
-            font-size: 14px;
-            color: #495057;
-            text-align: center;
-            opacity: 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: opacity 0.2s ease, max-height 0.2s ease, padding 0.2s ease;
-        }
-        .solver-status.visible {
-            opacity: 1;
-            max-height: 150px;
-            padding: 10px;
-        }
-        .alert-modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 0;
-            border: none;
-            width: 90%;
-            max-width: 350px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            overflow: hidden;
-            animation: alertSlideIn 0.2s ease-out;
-        }
-        @keyframes alertSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        @keyframes fadeSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .alert-body {
-            padding: 24px 20px;
-            text-align: center;
-        }
-        .alert-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-        .alert-icon.success {
-            color: #28a745;
-        }
-        .alert-icon.warning {
-            color: #ffc107;
-        }
-        .alert-icon.error {
-            color: #dc3545;
-        }
-        .alert-icon.info {
-            color: #007bff;
-        }
-        .alert-message {
-            font-size: 16px;
-            color: #333;
-            line-height: 1.5;
-            margin: 0;
-        }
-        .alert-footer {
-            padding: 12px 20px;
-            background-color: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            text-align: center;
-        }
-        .alert-btn {
-            padding: 10px 32px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .alert-btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        .alert-btn-primary:hover {
-            background-color: #0056b3;
-        }
-        kbd {
-            background-color: #f7f7f7;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
-            color: #333;
-            display: inline-block;
-            font-size: 0.85em;
-            font-weight: 700;
-            line-height: 1;
-            padding: 2px 4px;
-            white-space: nowrap;
-        }
-        @media (max-width: 768px) {
-            .solution {
-                height: 400px;
-            }
-        }
-    </style>
+  /* Solution: a table that scrolls inside its pane */
+  .solpane { display: flex; flex-direction: column; min-height: 0; }
+  .solpane > .scroller { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; border: 1px solid var(--border); background: var(--bg); }
+  .msg { padding: var(--space-3); color: var(--muted); }
+  .msg .word { font-weight: 600; }
+  .notice { margin: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid; color: var(--text); }
+  .notice.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .notice.ok .word { color: var(--ok); }
+  .notice.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .notice.warn .word { color: var(--warn); }
+  .notice.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .notice.bad .word { color: var(--bad); }
+  .notice p { margin: var(--space-1) 0 0; }
+  table.steps { width: 100%; border-collapse: collapse; }
+  .steps th { position: sticky; top: 0; z-index: var(--z-sticky); background: var(--code); color: var(--muted); text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--input); }
+  .steps td { padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .steps tbody tr:hover td { background: var(--panel); }
+  .steps .n { width: 1%; text-align: right; font-variant-numeric: tabular-nums; color: var(--faint); }
+  .steps th:nth-child(2), .steps th:nth-child(3), .steps .press { width: 1%; white-space: nowrap; }
+  .steps .press .sub { color: var(--muted); font-size: var(--text-sm); }
+  .steps[aria-busy="true"] tbody { color: var(--faint); }
+  .mini { display: inline-grid; grid-template-columns: repeat(3, 20px); grid-auto-rows: 20px; gap: 2px; vertical-align: middle; }
+  .mini > span { display: flex; align-items: center; justify-content: center; border: 1px solid var(--input); font: 700 var(--text-xs) / 1 var(--font-display); }
+  .where { display: inline-grid; grid-template-columns: repeat(3, 10px); grid-auto-rows: 10px; gap: 2px; vertical-align: middle; }
+  .where > span { border: 1px solid var(--input); }
+  .where > span.hit { background: var(--accent); border-color: var(--accent); }
+
+  /* Status bar: live solver state */
+  .statusbar { display: flex; flex-wrap: wrap; background: var(--code); border-top: 1px solid var(--input); font-size: var(--text-sm); color: var(--muted); }
+  .statusbar > span { padding: var(--space-1) var(--space-4); border-right: 1px solid var(--input); font-variant-numeric: tabular-nums; }
+  .statusbar > span:last-child { border-right: 0; }
+  .statusbar > span:empty { display: none; }
+
+  /* Help dialog */
+  dialog { width: min(600px, calc(100vw - 32px)); max-height: calc(100dvh - 64px); padding: 0; border: 1px solid var(--input); border-radius: 0; background: var(--panel); color: var(--text); box-shadow: var(--shadow); z-index: var(--z-dialog); }
+  dialog[open] { animation: fade-in var(--dur-fast) var(--ease); }
+  dialog::backdrop { background: color-mix(in srgb, var(--code) 70%, transparent); }
+  @keyframes fade-in { from { opacity: 0; } }
+  .dlg-head { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--input); background: var(--code); }
+  .dlg-head h2 { font-size: var(--text-lg); }
+  .dlg-head .btn { margin-left: auto; }
+  .dlg-body { padding: var(--space-4); max-width: var(--measure); }
+  .dlg-body h3 { margin: var(--space-4) 0 var(--space-2); }
+  .dlg-body h3:first-child { margin-top: 0; }
+  .dlg-body p, .dlg-body ul { margin: 0 0 var(--space-2); }
+  .dlg-body ul { padding-left: var(--space-4); }
+  .dlg-foot { display: flex; justify-content: flex-end; padding: var(--space-2) var(--space-4); border-top: 1px solid var(--input); }
+  table.rules { width: 100%; border-collapse: collapse; margin-bottom: var(--space-2); }
+  .rules th, .rules td { padding: var(--space-1) var(--space-2); border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  .rules td:first-child { white-space: nowrap; }
+  .rules th { background: var(--code); color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; }
+  .swatch { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-right: var(--space-2); border: 1px solid var(--input); font: 700 var(--text-xs) / 1 var(--font-display); vertical-align: middle; }
+  kbd { padding: 0 var(--space-1); border: 1px solid var(--input); border-radius: var(--radius); background: var(--code); font-size: var(--text-sm); }
+
+  /* Phone: one column, the page scrolls, the solution keeps a fixed-height pane */
+  @media (max-width: 767px) {
+    html, body { height: auto; }
+    .app { height: auto; min-height: 100dvh; grid-template-rows: auto auto auto 1fr auto; }
+    .toolbar .sep { display: none; }
+    main { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "board" "sol" "saved"; overflow: visible; }
+    .solpane { height: 28rem; }
+    .board { --corner: 28px; --tile: clamp(52px, calc((100vw - 32px - 26px - 56px - 16px) / 3), 80px); }
+    .btn { min-height: 44px; }
+    .btn.icon { width: 44px; }
+    .field input, .field select { min-height: 44px; }
+    .titleline { min-height: 48px; padding-top: 0; padding-bottom: 0; }
+  }
+</style>
 </head>
 <body>
-    <h1>Mora Jai Puzzle Solver</h1>
+<svg aria-hidden="true" style="display:none">
+  <!-- Lucide icons (ISC licence, see ATTRIBUTIONS.md) -->
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
+  <symbol id="i-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+</svg>
 
-    <div class="controls">
-        <h2>Set Initial Grid</h2>
-        <div class="grid-container" style="margin: 0 auto; position: relative; width: 310px;">
-            <div class="corner-color corner-tl orange" onclick="cycleCornerColor('tl')"></div>
-            <div class="corner-color corner-tr orange" onclick="cycleCornerColor('tr')"></div>
-            <div class="corner-color corner-bl orange" onclick="cycleCornerColor('bl')"></div>
-            <div class="corner-color corner-br orange" onclick="cycleCornerColor('br')"></div>
-            <div class="grid" id="grid"></div>
+<div class="app">
+  <div class="band" aria-hidden="true"></div>
+
+  <header class="titleline">
+    <h1>Mora Jai solver</h1>
+    <span class="ctx" id="ctx">Starting puzzle</span>
+    <button type="button" class="btn icon" id="themeBtn" aria-label="Switch to light theme" title="Switch to light theme"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg></button>
+  </header>
+
+  <div class="toolbar" role="toolbar" aria-label="Puzzle">
+    <button type="button" class="btn primary" id="solveBtn"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg><span class="lbls"><span data-s="idle" class="on">Solve</span><span data-s="busy">Solving …</span></span></button>
+    <button type="button" class="btn" id="stopBtn" disabled title="The solver isn't running"><svg class="i" aria-hidden="true"><use href="#i-square"/></svg>Stop</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="btn" id="randomBtn"><svg class="i" aria-hidden="true"><use href="#i-shuffle"/></svg>Random puzzle</button>
+    <button type="button" class="btn push" id="helpBtn" aria-haspopup="dialog"><svg class="i" aria-hidden="true"><use href="#i-help"/></svg>Help</button>
+  </div>
+
+  <main>
+      <fieldset class="group boardbox">
+        <legend>Board</legend>
+        <p class="hint" id="boardHint">Click a tile or corner to change its colour, or point at it and press its letter. The box opens when each corner tile matches the square beside it.</p>
+        <div class="board" id="board" role="group" aria-describedby="boardHint">
+          <button type="button" class="corner piece-orange" data-corner="tl" aria-label="Top-left target: orange">O</button>
+          <button type="button" class="corner piece-orange" data-corner="tr" aria-label="Top-right target: orange">O</button>
+          <button type="button" class="corner piece-orange" data-corner="bl" aria-label="Bottom-left target: orange">O</button>
+          <button type="button" class="corner piece-orange" data-corner="br" aria-label="Bottom-right target: orange">O</button>
         </div>
-        <div class="button-group">
-            <button onclick="setRandomGrid()">Random Grid</button>
-            <button id="solveBtn" onclick="solvePuzzle()">Solve Puzzle</button>
-            <button id="cancelBtn" class="cancel-btn" onclick="cancelSolve()">Cancel</button>
-            <div class="save-load-group">
-                <input type="text" id="saveName" class="save-name" placeholder="Puzzle name">
-                <button onclick="savePuzzle()">Save</button>
-                <select id="loadPuzzle" onchange="loadPuzzle()">
-                    <option value="">Load saved puzzle...</option>
-                </select>
-            </div>
+      </fieldset>
+
+      <fieldset class="group solpane">
+        <legend>Solution<span class="count" id="moveCount"></span></legend>
+        <div class="scroller" tabindex="0" aria-label="Solution steps">
+          <div id="solMsg"></div>
+          <table class="steps" id="stepsTable" hidden>
+            <thead><tr><th scope="col" class="n">#</th><th scope="col">Press</th><th scope="col">Where</th><th scope="col">Board after</th></tr></thead>
+            <tbody id="stepsBody"></tbody>
+          </table>
         </div>
-        <div id="solverStatus" class="solver-status"></div>
-    </div>
+      </fieldset>
 
-    <div class="solution" id="solution">
-        <h2>Solution Steps</h2>
-        <ol class="solution-steps" id="solution-steps"></ol>
-    </div>
-
-    <button class="info-button" onclick="showInfo()">?</button>
-
-    <div id="infoModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="hideInfo()">&times;</span>
-            <h2>About Mora Jai Puzzle Solver</h2>
-            <p>Welcome to the Mora Jai Puzzle Solver! This tool helps you solve Mora Jai puzzles by allowing you to set up the initial grid state and providing step-by-step solutions.</p>
-
-            <h3>How to Use:</h3>
-            <ol>
-                <li>Set the corner colors using the colored squares in each corner</li>
-                <li>Click on grid tiles to cycle through colors</li>
-                <li>Click "Solve Puzzle" to get step-by-step solution</li>
-                <li>Save your puzzles using the save feature</li>
-                <li>Load previously saved puzzles from the dropdown</li>
-            </ol>
-
-            <h3>Features:</h3>
-            <ul>
-                <li>Interactive grid setup</li>
-                <li>Step-by-step solution visualization</li>
-                <li>Save and load puzzle states</li>
-                <li>Random grid generation</li>
-            </ul>
-
-            <h3>Keyboard Shortcuts:</h3>
-            <p>Hover over a tile or corner and press the following keys to change colors:</p>
-            <ul>
-                <li><kbd>O</kbd> - Orange</li>
-                <li><kbd>Y</kbd> - Yellow</li>
-                <li><kbd>B</kbd> - Blue</li>
-                <li><kbd>K</kbd> - Black</li>
-                <li><kbd>G</kbd> - Gray</li>
-                <li><kbd>P</kbd> - Pink</li>
-                <li><kbd>U</kbd> - Purple</li>
-                <li><kbd>W</kbd> - White</li>
-            </ul>
-            <p><em>Tip: You can also use Tab to navigate between tiles and corners, then use the keyboard shortcuts to change colors.</em></p>
+      <fieldset class="group savedbox">
+        <legend>Saved puzzles<span class="count" id="savedCount">0</span></legend>
+        <form class="field" id="saveForm" novalidate>
+          <label for="saveName">Name</label>
+          <div class="row">
+            <input type="text" id="saveName" name="puzzle-name" autocomplete="off" spellcheck="false" maxlength="60" aria-describedby="saveHelp" placeholder="e.g. Library box">
+            <button type="submit" class="btn" id="saveBtn"><svg class="i" aria-hidden="true"><use href="#i-save"/></svg><span class="lbls"><span data-s="idle" class="on">Save puzzle</span><span data-s="done">Saved</span><span data-s="replaced">Replaced</span><span data-s="fail">Not saved</span></span></button>
+          </div>
+          <p class="help" id="saveHelp">Kept in this browser.</p>
+        </form>
+        <div class="field">
+          <label for="loadPuzzle">Open</label>
+          <div class="row">
+            <select id="loadPuzzle" name="saved-puzzle" aria-describedby="loadHelp">
+              <option value="">Choose a saved puzzle…</option>
+            </select>
+            <button type="button" class="btn" id="deleteBtn" disabled title="Choose a saved puzzle first"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg><span class="lbls"><span data-s="idle" class="on">Delete</span><span data-s="undo">Undo delete</span></span></button>
+          </div>
+          <p class="help" id="loadHelp">None yet. Name the board and save it.</p>
         </div>
-    </div>
+      </fieldset>
+  </main>
 
-    <div id="alertModal" class="modal">
-        <div class="alert-modal-content">
-            <div class="alert-body">
-                <div id="alertIcon" class="alert-icon"></div>
-                <p id="alertMessage" class="alert-message"></p>
-            </div>
-            <div class="alert-footer">
-                <button class="alert-btn alert-btn-primary" onclick="hideAlert()">OK</button>
-            </div>
-        </div>
-    </div>
+  <footer class="statusbar" aria-label="Solver">
+    <span id="sbState"></span><span id="sbStates"></span><span id="sbTime"></span>
+  </footer>
+</div>
 
-    <script>
-        function showInfo() {
-            document.getElementById('infoModal').style.display = 'block';
-        }
+<div class="vh" id="announce" aria-live="polite"></div>
 
-        function hideInfo() {
-            document.getElementById('infoModal').style.display = 'none';
-        }
+<dialog id="helpDlg" aria-labelledby="helpTitle">
+  <div class="dlg-head">
+    <h2 id="helpTitle">Help</h2>
+    <button type="button" class="btn icon" data-close aria-label="Close help" title="Close help"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="dlg-body">
+    <h3>Setting up</h3>
+    <p>Copy the puzzle box from the game: click each tile until it has the right colour, and do the same for the four corner squares. The solver runs after every change and lists the shortest set of presses it finds, up to 15 presses.</p>
+    <h3>What each tile does when pressed</h3>
+    <table class="rules">
+      <thead><tr><th scope="col">Tile</th><th scope="col">Effect</th></tr></thead>
+      <tbody>
+        <tr><td><span class="swatch piece-gray">G</span>Gray</td><td>Nothing.</td></tr>
+        <tr><td><span class="swatch piece-orange">O</span>Orange</td><td>Takes the colour most of its side neighbours share, when there is one.</td></tr>
+        <tr><td><span class="swatch piece-yellow">Y</span>Yellow</td><td>Swaps with the tile above it. Nothing on the top row.</td></tr>
+        <tr><td><span class="swatch piece-purple">U</span>Purple</td><td>Swaps with the tile below it. Nothing on the bottom row.</td></tr>
+        <tr><td><span class="swatch piece-black">K</span>Black</td><td>Moves every tile in its row one place right; the last one wraps to the start.</td></tr>
+        <tr><td><span class="swatch piece-pink">P</span>Pink</td><td>Turns the ring of tiles around it one step clockwise.</td></tr>
+        <tr><td><span class="swatch piece-white">W</span>White</td><td>Turns itself and its white side neighbours gray, and its gray side neighbours white.</td></tr>
+        <tr><td><span class="swatch piece-blue">B</span>Blue</td><td>Does what the centre tile does, from its own place. Copying white, it turns gray neighbours blue.</td></tr>
+      </tbody>
+    </table>
+    <h3>Keyboard</h3>
+    <ul>
+      <li><kbd>Tab</kbd> moves between tiles and corners; <kbd>Enter</kbd> or <kbd>Space</kbd> steps to the next colour.</li>
+      <li>A colour's letter sets it on the tile or corner that has focus or is under the pointer: <kbd>O</kbd> orange, <kbd>Y</kbd> yellow, <kbd>B</kbd> blue, <kbd>K</kbd> black, <kbd>G</kbd> gray, <kbd>P</kbd> pink, <kbd>U</kbd> purple, <kbd>W</kbd> white.</li>
+      <li><kbd>Esc</kbd> closes this window.</li>
+    </ul>
+  </div>
+  <div class="dlg-foot">
+    <button type="button" class="btn" data-close>Close</button>
+  </div>
+</dialog>
 
-        // Show custom alert modal
-        function showAlert(message, type = 'info') {
-            const modal = document.getElementById('alertModal');
-            const icon = document.getElementById('alertIcon');
-            const msg = document.getElementById('alertMessage');
-
-            // Set icon based on type
-            const icons = {
-                success: '✓',
-                warning: '⚠',
-                error: '✕',
-                info: 'ℹ'
-            };
-
-            icon.textContent = icons[type] || icons.info;
-            icon.className = 'alert-icon ' + type;
-            msg.textContent = message;
-            modal.style.display = 'block';
-
-            // Focus the OK button for keyboard accessibility
-            modal.querySelector('.alert-btn').focus();
-        }
-
-        function hideAlert() {
-            document.getElementById('alertModal').style.display = 'none';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const infoModal = document.getElementById('infoModal');
-            const alertModal = document.getElementById('alertModal');
-            if (event.target == infoModal) {
-                infoModal.style.display = 'none';
-            }
-            if (event.target == alertModal) {
-                alertModal.style.display = 'none';
-            }
-        }
-
-        // Close alert modal on Escape key
-        window.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                hideAlert();
-                hideInfo();
-            }
-            if (event.key === 'Enter' && document.getElementById('alertModal').style.display === 'block') {
-                hideAlert();
-            }
-        });
-    </script>
-    <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
